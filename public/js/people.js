@@ -17,6 +17,11 @@
     polling: null,
     submitting: false,
     timeUp: false,
+    scanner: {
+      stream: null,
+      raf: null,
+      active: false,
+    },
   };
 
   const els = {
@@ -37,6 +42,14 @@
     joinSubmit: document.getElementById("join-submit"),
     joinSubmitLabel: document.querySelector("#join-submit .btn-label"),
     joinSubmitSpinner: document.querySelector("#join-submit .btn-spinner"),
+
+    scanCodeBtn: document.getElementById("scan-code-btn"),
+    scannerOverlay: document.getElementById("scanner-overlay"),
+    scannerVideo: document.getElementById("scanner-video"),
+    scannerHint: document.getElementById("scanner-hint"),
+    scannerCloseBtn: document.getElementById("scanner-close-btn"),
+    scannerCancelBtn: document.getElementById("scanner-cancel-btn"),
+    scannerManualBtn: document.getElementById("scanner-manual-btn"),
 
     waitPlayerName: document.getElementById("wait-player-name"),
     leaveSessionBtn: document.getElementById("leave-session-btn"),
@@ -254,7 +267,9 @@
     if (els.joinSubmitLabel) {
       els.joinSubmitLabel.textContent = state ? "جارٍ الانضمام..." : "انضم الآن";
     }
-    if (els.joinSubmitSpinner) els.joinSubmitSpinner.hidden = !state;
+    if (els.joinSubmitSpinner) {
+      els.joinSubmitSpinner.hidden = !state;
+    }
   }
 
   function validateJoin() {
@@ -735,10 +750,136 @@
     clearFieldErrors();
   }
 
+  function openScanner() {
+    if (!els.scannerOverlay) return;
+
+    if (typeof window.jsQR !== "function") {
+      showAlert("error", "خدمة مسح الرمز غير متاحة حاليًا. استخدم الإدخال اليدوي.");
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showAlert("error", "الكاميرا غير مدعومة على هذا الجهاز.");
+      return;
+    }
+
+    els.scannerOverlay.hidden = false;
+    els.scannerHint.dataset.state = "";
+    els.scannerHint.textContent = "وجّه الكاميرا نحو رمز QR الخاص بالجلسة";
+
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      .then(function (stream) {
+        STATE.scanner.stream = stream;
+        STATE.scanner.active = true;
+        els.scannerVideo.srcObject = stream;
+        els.scannerVideo.play().catch(function () {});
+        scanLoop();
+      })
+      .catch(function () {
+        els.scannerHint.dataset.state = "error";
+        els.scannerHint.textContent = "تعذر فتح الكاميرا. تأكد من منح الإذن أو استخدم الإدخال اليدوي.";
+      });
+  }
+
+  function closeScanner() {
+    STATE.scanner.active = false;
+
+    if (STATE.scanner.raf) {
+      cancelAnimationFrame(STATE.scanner.raf);
+      STATE.scanner.raf = null;
+    }
+
+    if (STATE.scanner.stream) {
+      STATE.scanner.stream.getTracks().forEach(function (t) { t.stop(); });
+      STATE.scanner.stream = null;
+    }
+
+    if (els.scannerVideo) {
+      els.scannerVideo.pause();
+      els.scannerVideo.srcObject = null;
+    }
+
+    if (els.scannerOverlay) els.scannerOverlay.hidden = true;
+  }
+
+  function scanLoop() {
+    if (!STATE.scanner.active) return;
+    if (!els.scannerVideo || els.scannerVideo.readyState !== els.scannerVideo.HAVE_ENOUGH_DATA) {
+      STATE.scanner.raf = requestAnimationFrame(scanLoop);
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = els.scannerVideo.videoWidth;
+    canvas.height = els.scannerVideo.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(els.scannerVideo, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    let result = null;
+    try {
+      result = window.jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+    } catch (e) {
+      result = null;
+    }
+
+    if (result && result.data) {
+      const extracted = extractCodeFromQr(result.data);
+      if (extracted) {
+        els.joinCode.value = extracted;
+        els.joinCode.dispatchEvent(new Event("input", { bubbles: true }));
+        closeScanner();
+        showAlert("success", "تم التقاط رمز الجلسة: " + extracted);
+        return;
+      }
+    }
+
+    STATE.scanner.raf = requestAnimationFrame(scanLoop);
+  }
+
+  function extractCodeFromQr(text) {
+    if (!text || typeof text !== "string") return null;
+
+    const trimmed = text.trim();
+
+    if (/^\d{6}$/.test(trimmed)) return trimmed;
+
+    try {
+      const url = new URL(trimmed);
+      const codeParam = url.searchParams.get("code");
+      if (codeParam && /^\d{6}$/.test(codeParam)) return codeParam;
+    } catch (e) {
+    }
+
+    const match = trimmed.match(/(\d{6})/);
+    if (match) return match[1];
+
+    return null;
+  }
+
   function bindEvents() {
     if (els.joinForm) els.joinForm.addEventListener("submit", joinSession);
     if (els.leaveSessionBtn) els.leaveSessionBtn.addEventListener("click", leaveSession);
     if (els.backToJoinBtn) els.backToJoinBtn.addEventListener("click", backToJoin);
+
+    if (els.scanCodeBtn) els.scanCodeBtn.addEventListener("click", openScanner);
+    if (els.scannerCloseBtn) els.scannerCloseBtn.addEventListener("click", closeScanner);
+    if (els.scannerCancelBtn) els.scannerCancelBtn.addEventListener("click", closeScanner);
+    if (els.scannerManualBtn) {
+      els.scannerManualBtn.addEventListener("click", function () {
+        closeScanner();
+        if (els.joinCode) els.joinCode.focus();
+      });
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && els.scannerOverlay && !els.scannerOverlay.hidden) {
+        closeScanner();
+      }
+    });
 
     if (els.joinCode) {
       els.joinCode.addEventListener("input", function () {
