@@ -368,7 +368,7 @@
     const t = STATE.timer;
     const q = STATE.question;
 
-    if (!t && !q) {
+    if (!q) {
       if (els.timerValue) els.timerValue.textContent = "--";
       if (els.timerBarFill) {
         els.timerBarFill.style.width = "0%";
@@ -377,7 +377,7 @@
       return;
     }
 
-    const total = (t && t.total) || (q && q.timeLimit) || 0;
+    const total = (t && t.total) || q.timeLimit || 0;
     if (!total) {
       if (els.timerValue) els.timerValue.textContent = "--";
       if (els.timerBarFill) {
@@ -637,12 +637,9 @@
     if (STATE.loading) return;
     STATE.loading = true;
     try {
-      const mode = await askSessionMode();
-      if (!mode) return;
-
       const data = await api("/game/session", {
         method: "POST",
-        body: { mode: mode },
+        body: { mode: "solo" },
       });
 
       STATE.session = data && data.session;
@@ -654,42 +651,6 @@
     } finally {
       STATE.loading = false;
     }
-  }
-
-  function askSessionMode() {
-    return new Promise(function (resolve) {
-      openModal(
-        "وضع اللعب",
-        '<p class="confirm-text">اختر وضع اللعب لهذه الجلسة:</p>' +
-          '<div class="form-field">' +
-            '<label for="session-mode-select">الوضع</label>' +
-            '<select id="session-mode-select">' +
-              '<option value="solo">فردي</option>' +
-              '<option value="teams">فرق</option>' +
-            "</select>" +
-          "</div>",
-        [
-          {
-            label: "إلغاء",
-            className: "btn-outline",
-            onClick: function () {
-              closeModal();
-              resolve(null);
-            },
-          },
-          {
-            label: "إنشاء الجلسة",
-            className: "btn-primary",
-            onClick: function () {
-              const select = document.getElementById("session-mode-select");
-              const val = select ? select.value : "solo";
-              closeModal();
-              resolve(val);
-            },
-          },
-        ]
-      );
-    });
   }
 
   async function startGame() {
