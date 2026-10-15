@@ -484,7 +484,7 @@ select optgroup {
 }
 
 .grid-mid {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
 }
 
 .panel {
@@ -1187,12 +1187,6 @@ select optgroup {
   gap: 12px;
 }
 
-.form-row-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
 .confirm-text {
   font-size: 0.96rem;
   color: var(--text-1);
@@ -1289,8 +1283,7 @@ select optgroup {
     min-width: 200px;
   }
 
-  .form-row,
-  .form-row-3 {
+  .form-row {
     grid-template-columns: 1fr;
   }
 
