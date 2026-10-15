@@ -57,10 +57,12 @@
     scoreboardTitle: document.getElementById("scoreboard-title"),
     myScoreValue: document.getElementById("my-score-value"),
     myRank: document.getElementById("my-rank"),
+    scoreboardLeaderboard: document.getElementById("scoreboard-leaderboard"),
 
     endedTitle: document.getElementById("ended-title"),
     endedSub: document.getElementById("ended-sub"),
     endedScoreValue: document.getElementById("ended-score-value"),
+    endedLeaderboard: document.getElementById("ended-leaderboard"),
     backToJoinBtn: document.getElementById("back-to-join-btn"),
 
     playerScoreBadge: document.getElementById("player-score-badge"),
@@ -91,6 +93,16 @@
     } catch (e) {
       return String(n);
     }
+  }
+
+  function escapeHtml(str) {
+    if (str == null) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   async function api(path, options) {
@@ -451,6 +463,30 @@
     showScreen("reveal");
   }
 
+  function renderLeaderboardInto(target, data) {
+    if (!target) return;
+    target.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "لا يوجد ترتيب بعد.";
+      target.appendChild(li);
+      return;
+    }
+
+    data.forEach(function (entry, i) {
+      const rank = i + 1;
+      const rankClass = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "";
+      const li = document.createElement("li");
+      if (rank <= 3) li.classList.add("top-three");
+      li.innerHTML =
+        '<span class="rank ' + rankClass + '">' + rank + "</span>" +
+        '<span class="name">' + escapeHtml(entry.name) + "</span>" +
+        '<span class="score">' + formatNumber(entry.score || 0) + "</span>";
+      target.appendChild(li);
+    });
+  }
+
   function renderScoreboard(state) {
     const lb = state.leaderboard || [];
     const me = state.me || {};
@@ -467,6 +503,8 @@
     if (els.myScoreValue) els.myScoreValue.textContent = formatNumber(me.score || 0);
     if (els.myRank) els.myRank.textContent = rank;
     if (els.scoreboardTitle) els.scoreboardTitle.textContent = "ترتيبك";
+
+    renderLeaderboardInto(els.scoreboardLeaderboard, lb);
 
     if (typeof me.score === "number") STATE.score = me.score;
     updateScoreBadge();
@@ -488,6 +526,8 @@
     if (els.endedSub) {
       els.endedSub.textContent = "برصيدك النهائي: " + formatNumber(STATE.score) + " نقطة";
     }
+
+    renderLeaderboardInto(els.endedLeaderboard, lb);
 
     updateScoreBadge();
     showScreen("ended");
@@ -513,12 +553,12 @@
     }
 
     if (q) {
-      if (q.status === "revealed" || q.status === "committed") {
+      if (q.status === "revealed") {
         renderReveal(state);
         return;
       }
 
-      if (q.status === "moved") {
+      if (q.status === "committed" || q.status === "moved") {
         renderScoreboard(state);
         return;
       }
