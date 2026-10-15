@@ -642,6 +642,16 @@ async function revealAnswer(sessionId) {
   return true;
 }
 
+async function markQuestionCommitted(sessionId) {
+  await updateQuestionInSession(sessionId, function (item) {
+    item.status = QUESTION_STATUS.COMMITTED;
+    item.committed = true;
+    item.committedAt = now();
+    return item;
+  });
+  return true;
+}
+
 async function markQuestionMoved(sessionId) {
   await updateQuestionInSession(sessionId, function (item) {
     item.status = QUESTION_STATUS.MOVED;
@@ -706,6 +716,7 @@ module.exports = {
   resumeTimer,
   revealNextHint,
   revealAnswer,
+  markQuestionCommitted,
   markQuestionMoved,
   updateQuestionInSession,
 
