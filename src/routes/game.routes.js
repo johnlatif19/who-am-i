@@ -32,6 +32,7 @@ const {
   resumeTimer,
   revealNextHint,
   revealAnswer,
+  markQuestionCommitted,
   markQuestionMoved,
   logEvent,
   listEvents,
@@ -396,6 +397,7 @@ router.post("/question/commit", adminAuth, requireActiveSession, requireCurrentQ
     }
 
     const result = await commitRound(req.session.id, req.question);
+    await markQuestionCommitted(req.session.id);
     await logEvent(req.session.id, "round_committed", "تم اعتماد نتيجة السؤال");
 
     return res.json({ success: true, result: result });
