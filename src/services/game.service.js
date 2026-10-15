@@ -88,10 +88,10 @@ async function buildQrDataUrl(joinUrl) {
 }
 
 async function createSession(mode, adminUsername) {
-  const safeMode = mode === "teams" ? "teams" : "solo";
+  const safeMode = "solo";
   const code = await findFreeCode();
   const joinUrl = await buildJoinUrl(code);
-  const qrDataUrl = await buildQrJson(joinUrl);
+  const qrDataUrl = await buildQrDataUrl(joinUrl);
   const ts = now();
 
   const session = {
@@ -112,35 +112,24 @@ async function createSession(mode, adminUsername) {
   };
 
   const ref = await db().collection(COLLECTIONS.SESSIONS).add(session);
-  await logEvent(ref.id, "session_created", "تم إنشاء جلسة جديدة بوضع " + (safeMode === "teams" ? "فرق" : "فردي"));
+  await logEvent(ref.id, "session_created", "تم إنشاء جلسة جديدة");
   return Object.assign({ id: ref.id }, session);
-}
-
-async function buildQrJson(joinUrl) {
-  if (!joinUrl) return null;
-  try {
-    const QRCode = require("qrcode");
-    return await QRCode.toDataURL(joinUrl, {
-      errorCorrectionLevel: "M",
-      margin: 1,
-      width: 512,
-      color: { dark: "#0a0e27", light: "#ffffff" },
-    });
-  } catch (e) {
-    return null;
-  }
 }
 
 async function getActiveSession() {
   const ref = db().collection(COLLECTIONS.SESSIONS);
   const snap = await ref
     .where("status", "in", [SESSION_STATUS.WAITING, SESSION_STATUS.ACTIVE])
-    .orderBy("createdAt", "desc")
-    .limit(1)
+    .limit(20)
     .get();
   if (snap.empty) return null;
-  const doc = snap.docs[0];
-  return Object.assign({ id: doc.id }, doc.data());
+  const docs = snap.docs.map(function (d) {
+    return Object.assign({ id: d.id }, d.data());
+  });
+  docs.sort(function (a, b) {
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+  return docs[0];
 }
 
 async function getSessionById(sessionId) {
@@ -240,7 +229,7 @@ async function isNicknameTaken(sessionId, nickname) {
   return !snap.empty;
 }
 
-async function addPlayer(sessionId, nickname, teamName, mode) {
+async function addPlayer(sessionId, nickname) {
   const s = await getSessionById(sessionId);
   if (!s) throw Object.assign(new Error("الجلسة غير موجودة."), { status: 404 });
   if (s.status === SESSION_STATUS.ENDED) {
@@ -260,7 +249,6 @@ async function addPlayer(sessionId, nickname, teamName, mode) {
   const player = {
     nickname: nickname,
     nicknameLower: nickname.toLowerCase(),
-    teamName: mode === "teams" ? (teamName || "") : "",
     token: token,
     score: 0,
     joinedAt: ts,
@@ -275,36 +263,8 @@ async function addPlayer(sessionId, nickname, teamName, mode) {
     .collection(SESSION_SUBCOLLECTIONS.PLAYERS)
     .add(player);
 
-  if (mode === "teams" && teamName) {
-    await ensureTeam(sessionId, teamName);
-  }
-
   await logEvent(sessionId, "player_joined", "انضم اللاعب: " + nickname);
   return Object.assign({ id: ref.id }, player);
-}
-
-async function ensureTeam(sessionId, teamName) {
-  const snap = await db()
-    .collection(COLLECTIONS.SESSIONS)
-    .doc(sessionId)
-    .collection(SESSION_SUBCOLLECTIONS.TEAMS)
-    .where("name", "==", teamName)
-    .limit(1)
-    .get();
-
-  if (!snap.empty) return Object.assign({ id: snap.docs[0].id }, snap.docs[0].data());
-
-  const ref = await db()
-    .collection(COLLECTIONS.SESSIONS)
-    .doc(sessionId)
-    .collection(SESSION_SUBCOLLECTIONS.TEAMS)
-    .add({
-      name: teamName,
-      score: 0,
-      createdAt: now(),
-    });
-
-  return { id: ref.id, name: teamName, score: 0 };
 }
 
 async function getPlayerByToken(sessionId, token) {
@@ -341,17 +301,6 @@ async function listPlayers(sessionId) {
     .doc(sessionId)
     .collection(SESSION_SUBCOLLECTIONS.PLAYERS)
     .where("kicked", "==", false)
-    .get();
-  return snap.docs.map(function (d) {
-    return Object.assign({ id: d.id }, d.data());
-  });
-}
-
-async function listTeams(sessionId) {
-  const snap = await db()
-    .collection(COLLECTIONS.SESSIONS)
-    .doc(sessionId)
-    .collection(SESSION_SUBCOLLECTIONS.TEAMS)
     .get();
   return snap.docs.map(function (d) {
     return Object.assign({ id: d.id }, d.data());
@@ -454,8 +403,6 @@ async function createQuestion(data) {
     hints: data.hints || [],
     basePoints: data.basePoints != null ? data.basePoints : DEFAULT_BASE_POINTS,
     timeLimit: data.timeLimit != null ? data.timeLimit : DEFAULT_TIME_LIMIT,
-    imageUrl: data.imageUrl || "",
-    imagePublicId: data.imagePublicId || "",
     createdAt: ts,
     updatedAt: ts,
   };
@@ -478,9 +425,8 @@ async function deleteQuestion(questionId) {
   const ref = db().collection(COLLECTIONS.QUESTIONS).doc(questionId);
   const doc = await ref.get();
   if (!doc.exists) throw Object.assign(new Error("السؤال غير موجود."), { status: 404 });
-  const data = doc.data();
   await ref.delete();
-  return { id: questionId, imagePublicId: data.imagePublicId || "" };
+  return { id: questionId };
 }
 
 async function setCurrentQuestion(sessionId, order) {
@@ -706,8 +652,7 @@ async function markQuestionMoved(sessionId) {
 
 async function getSessionStats(sessionId) {
   const players = await listPlayers(sessionId);
-  const teams = await listTeams(sessionId);
-  return { playersCount: players.length, teamsCount: teams.length };
+  return { playersCount: players.length };
 }
 
 function canStartTimer(item) {
@@ -743,10 +688,8 @@ module.exports = {
   getPlayerByToken,
   getPlayerById,
   listPlayers,
-  listTeams,
   kickPlayer,
   leaveSession,
-  ensureTeam,
 
   pickQuestions,
   attachQuestionsToSession,
