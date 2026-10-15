@@ -148,7 +148,7 @@
     if (!res.ok) {
       if (res.status === 401) {
         window.location.replace("/admin-login");
-        return { success: false, message: "انتهت الجلسة، يرجى تسجيل الدخول مجددًا." };
+        return { success: false, message: "انتهت الجلسة." };
       }
       const message = (data && data.message) || "تعذر تنفيذ العملية.";
       const error = new Error(message);
