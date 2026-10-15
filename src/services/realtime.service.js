@@ -2,7 +2,6 @@ const {
   getSessionById,
   getCurrentQuestion,
   listPlayers,
-  listTeams,
   TIMER_STATUS,
   QUESTION_STATUS,
 } = require("./game.service");
@@ -48,14 +47,12 @@ async function buildAdminState() {
       question: null,
       timer: null,
       players: [],
-      teams: [],
       leaderboard: [],
     };
   }
 
   const question = await getCurrentQuestion(session.id);
   const players = await listPlayers(session.id);
-  const teams = await listTeams(session.id);
   const leaderboard = await buildLeaderboard(session.id);
 
   const viewerQuestion = question
@@ -96,17 +93,8 @@ async function buildAdminState() {
       return {
         id: p.id,
         nickname: p.nickname,
-        teamName: p.teamName || "",
         score: Number(p.score) || 0,
         joinedAt: p.joinedAt || null,
-      };
-    }),
-    teams: teams.map(function (t) {
-      return {
-        id: t.id,
-        name: t.name,
-        score: Number(t.score) || 0,
-        membersCount: players.filter(function (p) { return p.teamName === t.name; }).length,
       };
     }),
     leaderboard: leaderboard,
@@ -151,7 +139,6 @@ async function buildPlayerState(player, session) {
     me: {
       id: player.id,
       nickname: player.nickname,
-      teamName: player.teamName || "",
       score: Number(player.score) || 0,
     },
     leaderboard: leaderboard,
@@ -161,12 +148,11 @@ async function buildPlayerState(player, session) {
 async function buildViewerState() {
   const session = await getActiveSessionSafe();
   if (!session) {
-    return { session: null, question: null, timer: null, players: [], teams: [], leaderboard: [] };
+    return { session: null, question: null, timer: null, players: [], leaderboard: [] };
   }
 
   const question = await getCurrentQuestion(session.id);
   const players = await listPlayers(session.id);
-  const teams = await listTeams(session.id);
   const leaderboard = await buildLeaderboard(session.id);
 
   const viewerQuestion = question
@@ -199,9 +185,8 @@ async function buildViewerState() {
     question: viewerQuestion,
     timer: computeTimerView(session.timer),
     players: players.map(function (p) {
-      return { id: p.id, nickname: p.nickname, teamName: p.teamName || "" };
+      return { id: p.id, nickname: p.nickname };
     }),
-    teams: teams.map(function (t) { return { id: t.id, name: t.name }; }),
     leaderboard: leaderboard,
   };
 }
