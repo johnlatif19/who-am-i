@@ -190,11 +190,17 @@
     <section class="screen screen-scoreboard" id="screen-scoreboard" hidden>
       <div class="scoreboard-card">
         <h2 class="scoreboard-title" id="scoreboard-title">ترتيبك</h2>
+
         <div class="scoreboard-my-score">
           <span class="scoreboard-my-value" id="my-score-value">0</span>
           <span class="scoreboard-my-label">نقطة</span>
         </div>
+
         <div class="scoreboard-my-rank" id="my-rank">—</div>
+
+        <div class="scoreboard-leaderboard-scroll" id="scoreboard-leaderboard-scroll">
+          <ol class="scoreboard-leaderboard" id="scoreboard-leaderboard"></ol>
+        </div>
       </div>
     </section>
 
@@ -203,10 +209,16 @@
         <span class="ended-label">انتهت اللعبة</span>
         <h2 class="ended-title" id="ended-title">شكرًا لمشاركتك</h2>
         <p class="ended-sub" id="ended-sub">نتمنى أن تكون قد استمتعت</p>
+
         <div class="ended-score">
           <span class="ended-score-value" id="ended-score-value">0</span>
           <span class="ended-score-label">نقطة</span>
         </div>
+
+        <div class="ended-leaderboard-scroll">
+          <ol class="ended-leaderboard" id="ended-leaderboard"></ol>
+        </div>
+
         <button type="button" class="btn btn-primary btn-block" id="back-to-join-btn">الانضمام إلى جلسة جديدة</button>
       </div>
     </section>
