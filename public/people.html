@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e27" />
+  <meta name="description" content="انضم إلى لعبة من أنا؟ وأجب من هاتفك" />
+  <title>اللاعب | من أنا؟</title>
+
+  <link rel="icon" type="image/png" href="/public/assets/images/who_am_i/logo.png" />
+  <link rel="apple-touch-icon" href="/public/assets/images/who_am_i/logo.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@400;600;700;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="/public/css/people.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-stars"></div>
+  </div>
+
+  <div id="connection-indicator" class="connection-indicator" data-state="online" title="متصل">
+    <span class="dot"></span>
+    <span class="label">متصل</span>
+  </div>
+
+  <header class="player-header">
+    <div class="player-header-inner">
+      <a href="/" class="player-brand" aria-label="الصفحة الرئيسية">
+        <span class="player-logo">
+          <img
+            src="/public/assets/images/who_am_i/logo.png"
+            alt="شعار من أنا؟"
+            onerror="this.style.display='none';this.parentElement.classList.add('player-logo-empty');"
+          />
+          <span class="player-logo-fallback">من أنا؟</span>
+        </span>
+        <span class="player-brand-text">
+          <span class="player-brand-title">من أنا؟</span>
+          <span class="player-brand-sub">Who am I؟</span>
+        </span>
+      </a>
+
+      <div class="player-score-badge" id="player-score-badge" hidden>
+        <span class="player-score-value" id="player-score-value">0</span>
+        <span class="player-score-label">نقطة</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="player-main">
+
+    <section class="screen screen-join" id="screen-join">
+      <div class="join-card">
+        <div class="join-head">
+          <h1 class="join-title">انضم إلى اللعبة</h1>
+          <p class="join-sub">أدخل رمز الجلسة واسمك المستعار للبدء</p>
+        </div>
+
+        <form id="join-form" class="join-form" novalidate>
+          <div class="field">
+            <label for="join-code">رمز الجلسة</label>
+            <div class="input-wrap input-wrap-code">
+              <span class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="M7 10h2M7 14h6M12 10h5M12 14h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                id="join-code"
+                name="code"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="6"
+                autocomplete="off"
+                placeholder="000000"
+                required
+              />
+            </div>
+            <p class="field-error" data-error-for="join-code" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="join-nickname">اسمك المستعار</label>
+            <div class="input-wrap">
+              <span class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="M4.5 20c1.3-3.5 4-5.5 7.5-5.5s6.2 2 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                id="join-nickname"
+                name="nickname"
+                type="text"
+                maxlength="24"
+                autocomplete="off"
+                placeholder="مثال: يوسف، مريم، كيرلس"
+                required
+              />
+            </div>
+            <p class="field-error" data-error-for="join-nickname" hidden></p>
+          </div>
+
+          <div class="field" id="team-field" hidden>
+            <label for="join-team">اختر فريقك</label>
+            <div class="input-wrap">
+              <span class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                  <circle cx="17" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="M3 20c1-3 3.5-5 6-5s5 2 6 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <select id="join-team" name="team">
+                <option value="">— اختر —</option>
+              </select>
+            </div>
+            <p class="field-error" data-error-for="join-team" hidden></p>
+          </div>
+
+          <div class="join-alert" id="join-alert" role="alert" hidden></div>
+
+          <button type="submit" class="btn btn-primary btn-block" id="join-submit">
+            <span class="btn-label">انضم الآن</span>
+            <span class="btn-spinner" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" opacity="0.25"/>
+                <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section class="screen screen-wait" id="screen-wait" hidden>
+      <div class="wait-card">
+        <div class="wait-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 class="wait-title">تم الانضمام بنجاح</h2>
+        <p class="wait-sub">في انتظار بدء السؤال من مسؤول اللعبة...</p>
+
+        <div class="wait-player-info">
+          <span class="wait-player-name" id="wait-player-name">—</span>
+          <span class="wait-player-team" id="wait-player-team" hidden></span>
+        </div>
+
+        <div class="wait-dots">
+          <span></span><span></span><span></span>
+        </div>
+
+        <button type="button" class="btn btn-ghost btn-sm" id="leave-session-btn">مغادرة الجلسة</button>
+      </div>
+    </section>
+
+    <section class="screen screen-question" id="screen-question" hidden>
+      <div class="question-header">
+        <div class="question-progress">
+          <span class="question-progress-label">السؤال</span>
+          <span class="question-progress-value" id="q-progress">—</span>
+        </div>
+        <div class="question-points">
+          <span class="question-points-value" id="q-points">10</span>
+          <span class="question-points-label">نقطة</span>
+        </div>
+      </div>
+
+      <div class="question-timer-bar">
+        <div class="question-timer-fill" id="question-timer-fill"></div>
+      </div>
+
+      <div class="question-body">
+        <div class="question-hint-badge" id="q-hint-badge" data-state="idle">
+          <span id="q-hint-badge-label">لم يُتاح تلميح بعد</span>
+        </div>
+
+        <ul class="player-hints" id="player-hints"></ul>
+
+        <div class="question-image" id="q-image-wrap" hidden>
+          <img id="q-image" alt="صورة الشخصية" />
+        </div>
+      </div>
+
+      <div class="options-grid" id="options-grid"></div>
+
+      <div class="player-answer-status" id="answer-status" hidden></div>
+    </section>
+
+    <section class="screen screen-reveal" id="screen-reveal" hidden>
+      <div class="reveal-card">
+        <span class="reveal-label">الإجابة الصحيحة</span>
+        <h2 class="reveal-answer" id="reveal-answer">—</h2>
+        <p class="reveal-reference" id="reveal-reference"></p>
+        <div class="reveal-result" id="reveal-result" hidden></div>
+      </div>
+    </section>
+
+    <section class="screen screen-scoreboard" id="screen-scoreboard" hidden>
+      <div class="scoreboard-card">
+        <h2 class="scoreboard-title" id="scoreboard-title">ترتيبك</h2>
+        <div class="scoreboard-my-score">
+          <span class="scoreboard-my-value" id="my-score-value">0</span>
+          <span class="scoreboard-my-label">نقطة</span>
+        </div>
+        <div class="scoreboard-my-rank" id="my-rank">—</div>
+      </div>
+    </section>
+
+    <section class="screen screen-ended" id="screen-ended" hidden>
+      <div class="ended-card">
+        <span class="ended-label">انتهت اللعبة</span>
+        <h2 class="ended-title" id="ended-title">شكرًا لمشاركتك</h2>
+        <p class="ended-sub" id="ended-sub">نتمنى أن تكون قد استمتعت</p>
+        <div class="ended-score">
+          <span class="ended-score-value" id="ended-score-value">0</span>
+          <span class="ended-score-label">نقطة</span>
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="back-to-join-btn">الانضمام إلى جلسة جديدة</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="player-footer">
+    <span class="player-footer-text">من أنا؟ | Who am I؟</span>
+  </footer>
+
+  <script src="/public/js/people.js" defer></script>
+</body>
+</html>

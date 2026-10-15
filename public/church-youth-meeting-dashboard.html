@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0e27" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>شاشة العرض | من أنا؟</title>
+
+  <link rel="icon" type="image/png" href="/public/assets/images/who_am_i/logo.png" />
+  <link rel="apple-touch-icon" href="/public/assets/images/who_am_i/logo.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@400;600;700;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="/public/css/church-youth-meeting-dashboard.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-stars"></div>
+  </div>
+
+  <div id="connection-indicator" class="connection-indicator" data-state="online" title="متصل">
+    <span class="dot"></span>
+    <span class="label">متصل</span>
+  </div>
+
+  <header class="display-header">
+    <div class="display-header-inner">
+      <div class="display-brand">
+        <span class="display-logo">
+          <img
+            src="/public/assets/images/who_am_i/logo.png"
+            alt="شعار من أنا؟"
+            onerror="this.style.display='none';this.parentElement.classList.add('display-logo-empty');"
+          />
+          <span class="display-logo-fallback">من أنا؟</span>
+        </span>
+        <div class="display-brand-text">
+          <span class="display-title">من أنا؟</span>
+          <span class="display-subtitle">Who am I؟</span>
+        </div>
+      </div>
+
+      <div class="display-status">
+        <span class="display-status-pill" id="display-status-pill" data-state="idle">بانتظار البدء</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="display-main">
+
+    <section class="screen screen-waiting" id="screen-waiting">
+      <div class="screen-center">
+        <h1 class="waiting-title">انضم إلى اللعبة</h1>
+        <p class="waiting-sub">افتح صفحة اللاعب على هاتفك وأدخل رمز الجلسة</p>
+
+        <div class="waiting-code-card">
+          <span class="waiting-code-label">رمز الجلسة</span>
+          <div class="waiting-code" id="waiting-code">------</div>
+        </div>
+
+        <div class="waiting-qr" id="waiting-qr">
+          <img id="waiting-qr-image" alt="رمز QR للانضمام" hidden />
+          <div class="waiting-qr-placeholder" id="waiting-qr-placeholder">لا يوجد رمز QR</div>
+        </div>
+
+        <p class="waiting-url" id="waiting-url" hidden></p>
+
+        <div class="waiting-players">
+          <span class="waiting-players-count" id="waiting-players-count">0</span>
+          <span class="waiting-players-label">لاعب انضم حتى الآن</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen screen-question" id="screen-question" hidden>
+      <div class="question-top">
+        <div class="question-progress">
+          <span class="question-progress-label">السؤال</span>
+          <span class="question-progress-value" id="question-progress-value">—</span>
+        </div>
+        <div class="question-points">
+          <span class="question-points-label">القيمة الحالية</span>
+          <span class="question-points-value" id="question-points-value">10</span>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <div class="question-hint-badge" id="question-hint-badge" data-state="idle">
+          <span class="hint-badge-label" id="hint-badge-label">لم يُتاح تلميح بعد</span>
+        </div>
+
+        <div class="question-content">
+          <div class="question-image" id="question-image-wrap" hidden>
+            <img id="question-image" alt="صورة الشخصية" />
+          </div>
+
+          <div class="question-text">
+            <h2 class="question-title">من أنا؟</h2>
+            <p class="question-description" id="question-description">
+              استمع للتلميحات واختر الإجابة الصحيحة على هاتفك.
+            </p>
+            <ul class="hints-list" id="hints-list"></ul>
+          </div>
+        </div>
+
+        <div class="question-options" id="question-options"></div>
+      </div>
+
+      <div class="question-timer">
+        <div class="timer-ring" id="timer-ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" class="timer-ring-bg" />
+            <circle cx="60" cy="60" r="52" class="timer-ring-fill" id="timer-ring-fill" />
+          </svg>
+          <div class="timer-ring-text">
+            <span class="timer-ring-value" id="timer-value">--</span>
+            <span class="timer-ring-unit">ثانية</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen screen-reveal" id="screen-reveal" hidden>
+      <div class="screen-center">
+        <span class="reveal-label">الإجابة الصحيحة</span>
+        <h1 class="reveal-answer" id="reveal-answer">—</h1>
+        <p class="reveal-reference" id="reveal-reference"></p>
+      </div>
+    </section>
+
+    <section class="screen screen-leaderboard" id="screen-leaderboard" hidden>
+      <div class="screen-center">
+        <h1 class="leaderboard-title" id="leaderboard-title">الترتيب</h1>
+        <ol class="display-leaderboard" id="display-leaderboard"></ol>
+      </div>
+    </section>
+
+    <section class="screen screen-end" id="screen-end" hidden>
+      <div class="screen-center">
+        <span class="end-label">انتهت اللعبة</span>
+        <h1 class="end-winner" id="end-winner">—</h1>
+        <p class="end-sub" id="end-sub">شكرًا لمشاركتكم</p>
+
+        <ol class="display-leaderboard display-leaderboard-final" id="display-leaderboard-final"></ol>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="display-footer">
+    <span class="display-footer-text">من أنا؟ | Who am I؟</span>
+  </footer>
+
+  <script src="/public/js/church-youth-meeting-dashboard.js" defer></script>
+</body>
+</html>

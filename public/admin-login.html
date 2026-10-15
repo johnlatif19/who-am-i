@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0e27" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>دخول الأدمن | من أنا؟</title>
+
+  <link rel="icon" type="image/png" href="/public/assets/images/who-am-i.webp" />
+  <link rel="apple-touch-icon" href="/public/assets/images/who-am-i.webp" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@400;600;700;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="/public/css/admin-login.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-stars"></div>
+  </div>
+
+  <div id="connection-indicator" class="connection-indicator" data-state="online" title="متصل">
+    <span class="dot"></span>
+    <span class="label">متصل</span>
+  </div>
+
+  <main class="login-main">
+    <div class="login-card">
+      <div class="login-head">
+        <span class="login-logo">
+          <img
+            src="/public/assets/images/who-am-i.webp"
+            alt="شعار من أنا؟"
+            onerror="this.style.display='none';this.parentElement.classList.add('login-logo-empty');"
+          />
+          <span class="login-logo-fallback">من أنا؟</span>
+        </span>
+        <h1 class="login-title">دخول الأدمن</h1>
+        <p class="login-sub">هذه الصفحة مخصصة لمسؤولي تشغيل اللعبة فقط</p>
+      </div>
+
+      <form id="login-form" class="login-form" novalidate>
+        <div class="field">
+          <label for="username">اسم المستخدم</label>
+          <div class="input-wrap">
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M4.5 20c1.3-3.5 4-5.5 7.5-5.5s6.2 2 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+              minlength="3"
+              maxlength="60"
+              placeholder="أدخل اسم المستخدم"
+            />
+          </div>
+          <p class="field-error" data-error-for="username" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="password">كلمة المرور</label>
+          <div class="input-wrap">
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="4" y="10" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              minlength="6"
+              maxlength="120"
+              placeholder="أدخل كلمة المرور"
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              id="toggle-password"
+              aria-label="إظهار كلمة المرور"
+              aria-pressed="false"
+            >
+              <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              </svg>
+              <svg class="icon-eye-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M2 12s3.5-7 10-7c2 0 3.8.6 5.3 1.5M22 12s-3.5 7-10 7c-2 0-3.8-.6-5.3-1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9.5 9.5A3 3 0 0 0 14.5 14.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p class="field-error" data-error-for="password" hidden></p>
+        </div>
+
+        <div class="login-alert" id="login-alert" role="alert" hidden></div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="login-submit">
+          <span class="btn-label">تسجيل الدخول</span>
+          <span class="btn-spinner" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" opacity="0.25"/>
+              <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </button>
+
+        <p class="login-note" id="lockout-note" hidden></p>
+      </form>
+
+      <div class="login-foot">
+        <a href="/" class="back-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          الرجوع إلى الصفحة الرئيسية
+        </a>
+      </div>
+    </div>
+
+    <p class="login-copy">© <span id="footer-year"></span> من أنا؟ — جميع الحقوق محفوظة</p>
+  </main>
+
+  <script src="/public/js/admin-login.js" defer></script>
+</body>
+</html>

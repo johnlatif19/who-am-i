@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0e27" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>لوحة تحكم الأدمن | من أنا؟</title>
+
+  <link rel="icon" type="image/png" href="/public/assets/images/who_am_i/logo.png" />
+  <link rel="apple-touch-icon" href="/public/assets/images/who_am_i/logo.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@400;600;700;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="/public/css/admin-dashboard.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-stars"></div>
+  </div>
+
+  <div id="connection-indicator" class="connection-indicator" data-state="online" title="متصل">
+    <span class="dot"></span>
+    <span class="label">متصل</span>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="brand" aria-label="الصفحة الرئيسية">
+        <span class="brand-logo">
+          <img
+            src="/public/assets/images/who_am_i/logo.png"
+            alt="شعار من أنا؟"
+            onerror="this.style.display='none';this.parentElement.classList.add('brand-logo-empty');"
+          />
+          <span class="brand-logo-fallback">من أنا؟</span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">لوحة تحكم الأدمن</span>
+          <span class="brand-subtitle">من أنا؟ | Who am I؟</span>
+        </span>
+      </a>
+
+      <div class="header-actions">
+        <a href="/church-youth-meeting-dashboard" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M8 20h8M12 16v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          شاشة العرض
+        </a>
+        <button type="button" class="btn btn-outline btn-sm" id="logout-btn">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M10 12H3m0 0l3-3m-3 3l3 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          خروج
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <div class="container">
+
+      <div class="session-banner" id="session-banner" hidden>
+        <div class="session-banner-content">
+          <span class="session-banner-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <div class="session-banner-text">
+            <strong id="session-banner-title">لا توجد جلسة نشطة</strong>
+            <span id="session-banner-sub">ابدأ بإنشاء جلسة جديدة لبدء اللعبة.</span>
+          </div>
+          <div class="session-banner-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="create-session-btn">
+              إنشاء جلسة جديدة
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section class="grid-top">
+
+        <article class="panel panel-session" id="panel-session">
+          <header class="panel-head">
+            <h2 class="panel-title">الجلسة الحالية</h2>
+            <span class="panel-status" id="session-status-badge" data-state="idle">غير نشطة</span>
+          </header>
+
+          <div class="panel-body">
+            <div class="session-code-block">
+              <span class="session-code-label">رمز الانضمام</span>
+              <div class="session-code" id="session-code">------</div>
+              <button type="button" class="btn btn-ghost btn-sm" id="copy-code-btn" disabled>
+                نسخ الرمز
+              </button>
+            </div>
+
+            <div class="session-qr" id="session-qr">
+              <div class="session-qr-placeholder" id="session-qr-placeholder">
+                لا يوجد رمز QR بعد
+              </div>
+              <img id="session-qr-image" alt="رمز QR للانضمام" hidden />
+            </div>
+
+            <dl class="session-meta">
+              <div class="session-meta-item">
+                <dt>حالة الانضمام</dt>
+                <dd id="session-join-state">—</dd>
+              </div>
+              <div class="session-meta-item">
+                <dt>وضع اللعب</dt>
+                <dd id="session-mode">—</dd>
+              </div>
+              <div class="session-meta-item">
+                <dt>عدد اللاعبين</dt>
+                <dd id="session-players-count">0</dd>
+              </div>
+              <div class="session-meta-item">
+                <dt>عدد الفرق</dt>
+                <dd id="session-teams-count">0</dd>
+              </div>
+            </dl>
+
+            <div class="session-controls">
+              <button type="button" class="btn btn-primary btn-sm" id="open-join-btn" disabled>
+                فتح باب الانضمام
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="close-join-btn" disabled>
+                إغلاق باب الانضمام
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" id="end-session-btn" disabled>
+                إنهاء الجلسة
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel panel-game" id="panel-game">
+          <header class="panel-head">
+            <h2 class="panel-title">التحكم في اللعبة</h2>
+            <span class="panel-status" id="game-status-badge" data-state="idle">بانتظار البدء</span>
+          </header>
+
+          <div class="panel-body">
+            <div class="timer-block">
+              <div class="timer-display">
+                <span class="timer-value" id="timer-value">--</span>
+                <span class="timer-unit">ثانية</span>
+              </div>
+              <div class="timer-bar">
+                <div class="timer-bar-fill" id="timer-bar-fill"></div>
+              </div>
+            </div>
+
+            <div class="game-controls">
+              <button type="button" class="btn btn-primary btn-sm" id="start-timer-btn" disabled>
+                بدء المؤقت
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="pause-timer-btn" disabled>
+                إيقاف مؤقت
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="resume-timer-btn" disabled>
+                استئناف
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="next-hint-btn" disabled>
+                إتاحة التلميح التالي
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="reveal-answer-btn" disabled>
+                إظهار الإجابة الصحيحة
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="commit-round-btn" disabled>
+                اعتماد النتيجة
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="next-question-btn" disabled>
+                السؤال التالي
+              </button>
+            </div>
+
+            <div class="game-round-info">
+              <div class="round-info-item">
+                <span class="round-info-label">السؤال الحالي</span>
+                <span class="round-info-value" id="round-question-index">—</span>
+              </div>
+              <div class="round-info-item">
+                <span class="round-info-label">التلميحات المتاحة</span>
+                <span class="round-info-value" id="round-hints-count">0</span>
+              </div>
+              <div class="round-info-item">
+                <span class="round-info-label">قيمة السؤال الحالية</span>
+                <span class="round-info-value" id="round-points-value">0</span>
+              </div>
+              <div class="round-info-item">
+                <span class="round-info-label">عدد الإجابات</span>
+                <span class="round-info-value" id="round-answers-count">0</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <section class="grid-mid">
+
+        <article class="panel">
+          <header class="panel-head">
+            <h2 class="panel-title">اللاعبون</h2>
+            <span class="panel-sub" id="players-count-label">0 لاعب</span>
+          </header>
+          <div class="panel-body">
+            <div class="list-scroll" id="players-list">
+              <p class="empty-note">لا يوجد لاعبون بعد.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <header class="panel-head">
+            <h2 class="panel-title">الفرق</h2>
+            <span class="panel-sub" id="teams-count-label">0 فريق</span>
+          </header>
+          <div class="panel-body">
+            <div class="list-scroll" id="teams-list">
+              <p class="empty-note">لا توجد فرق بعد.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <header class="panel-head">
+            <h2 class="panel-title">الترتيب المباشر</h2>
+            <span class="panel-sub">يُحدَّث تلقائيًا</span>
+          </header>
+          <div class="panel-body">
+            <ol class="leaderboard" id="leaderboard">
+              <li class="empty-note">لا يوجد ترتيب بعد.</li>
+            </ol>
+          </div>
+        </article>
+
+      </section>
+
+      <section class="panel panel-library" id="panel-library">
+        <header class="panel-head">
+          <h2 class="panel-title">مكتبة الأسئلة</h2>
+          <div class="panel-head-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="add-question-btn">
+              إضافة سؤال
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="reload-questions-btn">
+              تحديث
+            </button>
+          </div>
+        </header>
+
+        <div class="panel-body">
+          <div class="questions-list" id="questions-list">
+            <p class="empty-note">جارٍ تحميل الأسئلة...</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-log">
+        <header class="panel-head">
+          <h2 class="panel-title">سجل الأحداث</h2>
+          <button type="button" class="btn btn-ghost btn-sm" id="clear-log-btn">تفريغ السجل</button>
+        </header>
+        <div class="panel-body">
+          <ul class="log-list" id="log-list"></ul>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-head">
+        <h3 class="modal-title" id="modal-title">عنوان</h3>
+        <button type="button" class="modal-close" id="modal-close-btn" aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body" id="modal-body"></div>
+      <footer class="modal-foot" id="modal-foot"></footer>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <script src="/public/js/admin-dashboard.js" defer></script>
+</body>
+</html>
