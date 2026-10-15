@@ -15,14 +15,12 @@ const {
   getActiveSession,
   getSessionByCode,
   getSessionById,
-  updateSession,
   openJoin,
   closeJoin,
   endSession,
   addPlayer,
   getPlayerByToken,
   listPlayers,
-  listTeams,
   kickPlayer,
   leaveSession,
   pickQuestions,
@@ -39,7 +37,6 @@ const {
   listEvents,
   SESSION_STATUS,
   QUESTION_STATUS,
-  TIMER_STATUS,
 } = require("../services/game.service");
 
 const {
@@ -127,8 +124,6 @@ router.get("/session/lookup", async function (req, res) {
       return res.status(404).json({ success: false, message: "لا توجد جلسة بهذا الرمز." });
     }
 
-    const teams = await listTeams(session.id);
-
     return res.json({
       success: true,
       session: {
@@ -137,7 +132,6 @@ router.get("/session/lookup", async function (req, res) {
         mode: session.mode,
         status: session.status,
         joinOpen: !!session.joinOpen,
-        teams: session.mode === "teams" ? teams.map(function (t) { return { name: t.name }; }) : [],
       },
     });
   } catch (e) {
@@ -173,8 +167,7 @@ router.post("/session", adminAuth, validateBody(createSessionSchema), async func
       });
     }
 
-    const mode = req.validatedBody.mode;
-    const session = await createSession(mode, req.admin ? req.admin.username : "admin");
+    const session = await createSession("solo", req.admin ? req.admin.username : "admin");
     return res.json({ success: true, session: session });
   } catch (e) {
     return res.status(e.status || 500).json({ success: false, message: e.message || "تعذر إنشاء الجلسة." });
@@ -219,7 +212,7 @@ router.get("/events", adminAuth, requireActiveSession, async function (req, res)
 
 router.post("/join", validateBody(joinSessionSchema), async function (req, res) {
   try {
-    const { code, nickname, team } = req.validatedBody;
+    const { code, nickname } = req.validatedBody;
 
     const session = await getSessionByCode(code);
     if (!session) {
@@ -235,9 +228,7 @@ router.post("/join", validateBody(joinSessionSchema), async function (req, res) 
     }
 
     const cleanNickname = normalizeNickname(nickname);
-    const player = await addPlayer(session.id, cleanNickname, team, session.mode);
-
-    await logEvent(session.id, "player_joined", "انضم اللاعب: " + cleanNickname);
+    const player = await addPlayer(session.id, cleanNickname);
 
     return res.json({
       success: true,
@@ -250,7 +241,6 @@ router.post("/join", validateBody(joinSessionSchema), async function (req, res) 
       player: {
         id: player.id,
         nickname: player.nickname,
-        teamName: player.teamName || "",
         token: player.token,
         score: 0,
       },
@@ -454,17 +444,6 @@ router.post("/players/:playerId/kick", adminAuth, requireActiveSession, async fu
     return res.json({ success: true });
   } catch (e) {
     return res.status(e.status || 500).json({ success: false, message: e.message || "تعذر استبعاد اللاعب." });
-  }
-});
-
-router.post("/session/:sessionId/question/start", adminAuth, async function (req, res) {
-  try {
-    const s = await getSessionById(req.params.sessionId);
-    if (!s) return res.status(404).json({ success: false, message: "الجلسة غير موجودة." });
-    const item = await setCurrentQuestion(s.id, 1);
-    return res.json({ success: true, order: item.order });
-  } catch (e) {
-    return res.status(e.status || 500).json({ success: false, message: e.message || "تعذر بدء السؤال." });
   }
 });
 
