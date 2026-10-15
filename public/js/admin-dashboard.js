@@ -3,12 +3,12 @@
 
   const API_BASE = "/api";
   const POLL_MS = 2500;
+
   const STATE = {
     session: null,
     question: null,
     timer: null,
     players: [],
-    teams: [],
     leaderboard: [],
     questions: [],
     log: [],
@@ -33,13 +33,10 @@
     sessionStatusBadge: document.getElementById("session-status-badge"),
     sessionCode: document.getElementById("session-code"),
     copyCodeBtn: document.getElementById("copy-code-btn"),
-    sessionQr: document.getElementById("session-qr"),
     sessionQrPlaceholder: document.getElementById("session-qr-placeholder"),
     sessionQrImage: document.getElementById("session-qr-image"),
     sessionJoinState: document.getElementById("session-join-state"),
-    sessionMode: document.getElementById("session-mode"),
     sessionPlayersCount: document.getElementById("session-players-count"),
-    sessionTeamsCount: document.getElementById("session-teams-count"),
     openJoinBtn: document.getElementById("open-join-btn"),
     closeJoinBtn: document.getElementById("close-join-btn"),
     endSessionBtn: document.getElementById("end-session-btn"),
@@ -62,8 +59,6 @@
 
     playersList: document.getElementById("players-list"),
     playersCountLabel: document.getElementById("players-count-label"),
-    teamsList: document.getElementById("teams-list"),
-    teamsCountLabel: document.getElementById("teams-count-label"),
     leaderboard: document.getElementById("leaderboard"),
 
     questionsList: document.getElementById("questions-list"),
@@ -305,9 +300,7 @@
         els.sessionQrImage.removeAttribute("src");
       }
       if (els.sessionJoinState) els.sessionJoinState.textContent = "—";
-      if (els.sessionMode) els.sessionMode.textContent = "—";
       if (els.sessionPlayersCount) els.sessionPlayersCount.textContent = "0";
-      if (els.sessionTeamsCount) els.sessionTeamsCount.textContent = "0";
       toggleSessionControls(false);
       return;
     }
@@ -316,9 +309,7 @@
 
     if (els.sessionCode) els.sessionCode.textContent = s.code || "------";
     if (els.sessionJoinState) els.sessionJoinState.textContent = s.joinOpen ? "مفتوح" : "مغلق";
-    if (els.sessionMode) els.sessionMode.textContent = s.mode === "teams" ? "فرق" : "فردي";
     if (els.sessionPlayersCount) els.sessionPlayersCount.textContent = formatNumber(STATE.players.length);
-    if (els.sessionTeamsCount) els.sessionTeamsCount.textContent = formatNumber(STATE.teams.length);
 
     const hasQuestions = (s.totalQuestions || 0) > 0;
 
@@ -375,7 +366,19 @@
 
   function renderTimer() {
     const t = STATE.timer;
-    if (!t || !t.total) {
+    const q = STATE.question;
+
+    if (!t && !q) {
+      if (els.timerValue) els.timerValue.textContent = "--";
+      if (els.timerBarFill) {
+        els.timerBarFill.style.width = "0%";
+        els.timerBarFill.removeAttribute("data-state");
+      }
+      return;
+    }
+
+    const total = (t && t.total) || (q && q.timeLimit) || 0;
+    if (!total) {
       if (els.timerValue) els.timerValue.textContent = "--";
       if (els.timerBarFill) {
         els.timerBarFill.style.width = "0%";
@@ -385,19 +388,19 @@
     }
 
     const now = Date.now();
-    let remaining = 0;
+    let remaining = total;
 
-    if (t.status === "running" && t.endsAt) {
+    if (t && t.status === "running" && t.endsAt) {
       remaining = Math.max(0, Math.ceil((t.endsAt - now) / 1000));
-    } else if (t.status === "paused" && t.remainingMs) {
+    } else if (t && t.status === "paused" && t.remainingMs) {
       remaining = Math.max(0, Math.ceil(t.remainingMs / 1000));
-    } else {
+    } else if (t && t.status === "ended") {
       remaining = 0;
     }
 
     if (els.timerValue) els.timerValue.textContent = String(remaining);
 
-    const pct = Math.min(100, Math.max(0, (remaining / t.total) * 100));
+    const pct = Math.min(100, Math.max(0, (remaining / total) * 100));
     if (els.timerBarFill) {
       els.timerBarFill.style.width = pct + "%";
       if (pct <= 20) els.timerBarFill.dataset.state = "danger";
@@ -493,8 +496,7 @@
         '<div class="list-item-main">' +
           '<span class="list-item-name">' + escapeHtml(player.nickname) + "</span>" +
           '<span class="list-item-meta">' +
-            (player.teamName ? "الفريق: " + escapeHtml(player.teamName) : "فردي") +
-            " — " + formatNumber(player.score || 0) + " نقطة" +
+            formatNumber(player.score || 0) + " نقطة" +
           "</span>" +
         "</div>" +
         '<div class="list-item-actions">' +
@@ -514,38 +516,6 @@
       });
 
       els.playersList.appendChild(div);
-    });
-  }
-
-  function renderTeams() {
-    if (!els.teamsList) return;
-    els.teamsList.innerHTML = "";
-
-    if (els.teamsCountLabel) {
-      els.teamsCountLabel.textContent = formatNumber(STATE.teams.length) + " فريق";
-    }
-
-    if (STATE.teams.length === 0) {
-      const p = document.createElement("p");
-      p.className = "empty-note";
-      p.textContent = "لا توجد فرق بعد.";
-      els.teamsList.appendChild(p);
-      return;
-    }
-
-    STATE.teams.forEach(function (team) {
-      const div = document.createElement("div");
-      div.className = "list-item";
-      div.innerHTML =
-        '<div class="list-item-main">' +
-          '<span class="list-item-name">' + escapeHtml(team.name) + "</span>" +
-          '<span class="list-item-meta">' +
-            formatNumber(team.membersCount || 0) + " عضو — " +
-            formatNumber(team.score || 0) + " نقطة" +
-          "</span>" +
-        "</div>";
-
-      els.teamsList.appendChild(div);
     });
   }
 
@@ -642,14 +612,12 @@
       STATE.question = (data && data.question) || null;
       STATE.timer = (data && data.timer) || null;
       STATE.players = (data && data.players) || [];
-      STATE.teams = (data && data.teams) || [];
       STATE.leaderboard = (data && data.leaderboard) || [];
 
       renderSession();
       renderTimer();
       renderGameStatus();
       renderPlayers();
-      renderTeams();
       renderLeaderboard();
     } catch (e) {
       if (e.status !== 401) {
@@ -679,7 +647,7 @@
 
       STATE.session = data && data.session;
       toast("تم إنشاء جلسة جديدة بنجاح.", "success");
-      pushLog("تم إنشاء جلسة جديدة — الوضع: " + (mode === "teams" ? "فرق" : "فردي"), "success");
+      pushLog("تم إنشاء جلسة جديدة.", "success");
       await loadState();
     } catch (e) {
       toast(e.message || "تعذر إنشاء الجلسة.", "error");
@@ -1112,7 +1080,7 @@
     startPolling();
 
     setInterval(function () {
-      if (STATE.timer && STATE.timer.status === "running") renderTimer();
+      if (STATE.question) renderTimer();
     }, 500);
 
     pushLog("تم فتح لوحة التحكم.", "info");
