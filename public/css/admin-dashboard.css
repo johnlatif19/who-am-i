@@ -413,6 +413,11 @@ select optgroup {
   box-shadow: var(--shadow-md);
 }
 
+.session-banner-start {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(212, 175, 55, 0.12));
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
 .session-banner-content {
   display: flex;
   align-items: center;
@@ -430,6 +435,12 @@ select optgroup {
   place-items: center;
   color: var(--gold-1);
   flex-shrink: 0;
+}
+
+.session-banner-icon-start {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: var(--green-1);
 }
 
 .session-banner-icon svg {
