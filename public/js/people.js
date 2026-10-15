@@ -4,20 +4,19 @@
   const API_BASE = "/api";
   const POLL_MS = 1500;
   const STORAGE_KEY = "who_am_i_player";
+
   const STATE = {
     sessionId: null,
     playerId: null,
     playerToken: null,
     nickname: "",
-    teamName: "",
-    mode: "solo",
     screen: "join",
     questionId: null,
     submittedAnswer: null,
     score: 0,
     polling: null,
     submitting: false,
-    lastState: null,
+    timeUp: false,
   };
 
   const els = {
@@ -34,23 +33,18 @@
     joinForm: document.getElementById("join-form"),
     joinCode: document.getElementById("join-code"),
     joinNickname: document.getElementById("join-nickname"),
-    joinTeam: document.getElementById("join-team"),
-    joinTeamField: document.getElementById("team-field"),
     joinAlert: document.getElementById("join-alert"),
     joinSubmit: document.getElementById("join-submit"),
     joinSubmitLabel: document.querySelector("#join-submit .btn-label"),
     joinSubmitSpinner: document.querySelector("#join-submit .btn-spinner"),
 
     waitPlayerName: document.getElementById("wait-player-name"),
-    waitPlayerTeam: document.getElementById("wait-player-team"),
     leaveSessionBtn: document.getElementById("leave-session-btn"),
 
     qProgress: document.getElementById("q-progress"),
     qPoints: document.getElementById("q-points"),
     qHintBadge: document.getElementById("q-hint-badge"),
     qHintBadgeLabel: document.getElementById("q-hint-badge-label"),
-    qImageWrap: document.getElementById("q-image-wrap"),
-    qImage: document.getElementById("q-image"),
     playerHints: document.getElementById("player-hints"),
     optionsGrid: document.getElementById("options-grid"),
     answerStatus: document.getElementById("answer-status"),
@@ -99,16 +93,6 @@
     }
   }
 
-  function escapeHtml(str) {
-    if (str == null) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
   async function api(path, options) {
     const opts = options || {};
     const headers = Object.assign(
@@ -146,15 +130,15 @@
 
   function saveSession() {
     try {
-      const payload = {
-        sessionId: STATE.sessionId,
-        playerId: STATE.playerId,
-        playerToken: STATE.playerToken,
-        nickname: STATE.nickname,
-        teamName: STATE.teamName,
-        mode: STATE.mode,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          sessionId: STATE.sessionId,
+          playerId: STATE.playerId,
+          playerToken: STATE.playerToken,
+          nickname: STATE.nickname,
+        })
+      );
     } catch (e) {
     }
   }
@@ -169,8 +153,6 @@
       STATE.playerId = data.playerId;
       STATE.playerToken = data.playerToken;
       STATE.nickname = data.nickname || "";
-      STATE.teamName = data.teamName || "";
-      STATE.mode = data.mode || "solo";
       return true;
     } catch (e) {
       return false;
@@ -186,10 +168,9 @@
     STATE.playerId = null;
     STATE.playerToken = null;
     STATE.nickname = "";
-    STATE.teamName = "";
     STATE.submittedAnswer = null;
     STATE.questionId = null;
-    STATE.lastState = null;
+    STATE.timeUp = false;
   }
 
   function showScreen(name) {
@@ -269,7 +250,6 @@
     let ok = true;
     const code = (els.joinCode.value || "").trim();
     const nickname = (els.joinNickname.value || "").trim();
-    const team = els.joinTeam ? els.joinTeam.value : "";
 
     if (!/^\d{6}$/.test(code)) {
       setFieldError("join-code", "أدخل رمزًا مكوّنًا من 6 أرقام.");
@@ -285,13 +265,6 @@
     } else if (nickname.length > 24) {
       setFieldError("join-nickname", "الاسم طويل جدًا.");
       ok = false;
-    }
-
-    if (STATE.mode === "teams" && els.joinTeamField && !els.joinTeamField.hidden) {
-      if (!team) {
-        setFieldError("join-team", "اختر فريقك.");
-        ok = false;
-      }
     }
 
     return ok;
@@ -311,16 +284,24 @@
 
   function renderWait() {
     if (els.waitPlayerName) els.waitPlayerName.textContent = STATE.nickname || "—";
-    if (els.waitPlayerTeam) {
-      if (STATE.teamName) {
-        els.waitPlayerTeam.textContent = "الفريق: " + STATE.teamName;
-        els.waitPlayerTeam.hidden = false;
-      } else {
-        els.waitPlayerTeam.hidden = true;
-      }
-    }
     updateScoreBadge();
     showScreen("wait");
+  }
+
+  function applyTimeUpUI() {
+    if (!els.optionsGrid) return;
+    const buttons = els.optionsGrid.querySelectorAll(".option-btn");
+    buttons.forEach(function (btn) {
+      btn.disabled = true;
+      if (!STATE.submittedAnswer) {
+        btn.dataset.state = "locked";
+      }
+    });
+    if (els.answerStatus && !STATE.submittedAnswer) {
+      els.answerStatus.dataset.type = "info";
+      els.answerStatus.textContent = "انتهى الوقت. لم يتم إرسال إجابة.";
+      els.answerStatus.hidden = false;
+    }
   }
 
   function renderQuestion(state) {
@@ -356,19 +337,13 @@
       });
     }
 
-    if (q.imageUrl && els.qImage && els.qImageWrap) {
-      els.qImage.src = q.imageUrl;
-      els.qImageWrap.hidden = false;
-    } else if (els.qImageWrap) {
-      els.qImageWrap.hidden = true;
-    }
-
     const options = q.options || [];
     const isSameQuestion = STATE.questionId === q.id;
 
     if (!isSameQuestion) {
       STATE.questionId = q.id;
       STATE.submittedAnswer = null;
+      STATE.timeUp = false;
     }
 
     if (els.optionsGrid) {
@@ -386,6 +361,9 @@
         } else if (STATE.submittedAnswer) {
           btn.disabled = true;
           btn.dataset.state = "locked";
+        } else if (STATE.timeUp) {
+          btn.disabled = true;
+          btn.dataset.state = "locked";
         } else {
           btn.addEventListener("click", function () {
             submitAnswer(opt);
@@ -400,6 +378,10 @@
       if (STATE.submittedAnswer) {
         els.answerStatus.dataset.type = "success";
         els.answerStatus.textContent = "تم إرسال إجابتك. في انتظار كشف الإجابة.";
+        els.answerStatus.hidden = false;
+      } else if (STATE.timeUp) {
+        els.answerStatus.dataset.type = "info";
+        els.answerStatus.textContent = "انتهى الوقت. لم يتم إرسال إجابة.";
         els.answerStatus.hidden = false;
       } else {
         els.answerStatus.hidden = true;
@@ -416,6 +398,7 @@
 
     const now = Date.now();
     let remaining = 0;
+
     if (t.status === "running" && t.endsAt) {
       remaining = Math.max(0, Math.ceil((t.endsAt - now) / 1000));
     } else if (t.status === "paused" && t.remainingMs) {
@@ -429,12 +412,9 @@
     else if (pct <= 50) els.questionTimerFill.dataset.state = "warning";
     else els.questionTimerFill.removeAttribute("data-state");
 
-    if (remaining <= 0 && STATE.submittedAnswer === null && t.status === "running") {
-      if (els.answerStatus) {
-        els.answerStatus.dataset.type = "info";
-        els.answerStatus.textContent = "انتهى الوقت. لم يتم إرسال إجابة.";
-        els.answerStatus.hidden = false;
-      }
+    if (t.status === "running" && remaining <= 0) {
+      STATE.timeUp = true;
+      applyTimeUpUI();
     }
   }
 
@@ -486,9 +466,7 @@
 
     if (els.myScoreValue) els.myScoreValue.textContent = formatNumber(me.score || 0);
     if (els.myRank) els.myRank.textContent = rank;
-    if (els.scoreboardTitle) {
-      els.scoreboardTitle.textContent = state.session.mode === "teams" ? "ترتيب الفريق" : "ترتيبك";
-    }
+    if (els.scoreboardTitle) els.scoreboardTitle.textContent = "ترتيبك";
 
     if (typeof me.score === "number") STATE.score = me.score;
     updateScoreBadge();
@@ -504,11 +482,7 @@
 
     let winnerText = "";
     if (lb.length > 0) {
-      if (state.session.mode === "teams") {
-        winnerText = "الفريق الفائز: " + lb[0].name;
-      } else {
-        winnerText = "الفائز: " + lb[0].name;
-      }
+      winnerText = "الفائز: " + lb[0].name;
     }
     if (els.endedTitle) els.endedTitle.textContent = winnerText || "شكرًا لمشاركتك";
     if (els.endedSub) {
@@ -549,7 +523,13 @@
         return;
       }
 
-      if (q.status === "idle" || q.status === "shown" || q.status === "running" || q.status === "paused" || q.status === "ended") {
+      if (
+        q.status === "idle" ||
+        q.status === "shown" ||
+        q.status === "running" ||
+        q.status === "paused" ||
+        q.status === "ended"
+      ) {
         renderQuestion(state);
         renderTimer(state);
         return;
@@ -563,7 +543,6 @@
     if (!STATE.playerToken) return;
     try {
       const data = await api("/game/player-state");
-      STATE.lastState = data;
       decideScreen(data);
     } catch (e) {
       if (e.status === 401 || e.status === 404) {
@@ -590,6 +569,7 @@
   async function submitAnswer(answer) {
     if (STATE.submitting) return;
     if (STATE.submittedAnswer) return;
+    if (STATE.timeUp) return;
     if (!STATE.playerToken) return;
 
     STATE.submitting = true;
@@ -631,8 +611,7 @@
   }
 
   async function lookupSession(code) {
-    const data = await api("/game/session/lookup?code=" + encodeURIComponent(code));
-    return data;
+    return api("/game/session/lookup?code=" + encodeURIComponent(code));
   }
 
   async function joinSession(event) {
@@ -654,33 +633,15 @@
         return;
       }
 
-      STATE.mode = lookup.session.mode || "solo";
-
-      if (STATE.mode === "teams" && lookup.session.teams && els.joinTeam) {
-        els.joinTeam.innerHTML = '<option value="">— اختر —</option>';
-        lookup.session.teams.forEach(function (t) {
-          const opt = document.createElement("option");
-          opt.value = t.name;
-          opt.textContent = t.name;
-          els.joinTeam.appendChild(opt);
-        });
-        if (els.joinTeamField) els.joinTeamField.hidden = false;
-      } else if (els.joinTeamField) {
-        els.joinTeamField.hidden = true;
-      }
-
       if (!validateJoin()) return;
 
       setJoinSubmitting(true);
-
-      const team = STATE.mode === "teams" && els.joinTeam ? els.joinTeam.value : "";
 
       const res = await api("/game/join", {
         method: "POST",
         body: {
           code: code,
           nickname: (els.joinNickname.value || "").trim(),
-          team: team,
         },
       });
 
@@ -693,8 +654,6 @@
       STATE.playerId = res.player.id;
       STATE.playerToken = res.player.token;
       STATE.nickname = res.player.nickname;
-      STATE.teamName = res.player.teamName || "";
-      STATE.mode = res.session.mode || "solo";
 
       saveSession();
 
@@ -747,7 +706,10 @@
         const wrap = els.joinCode.parentElement;
         if (wrap) wrap.classList.remove("invalid");
         const err = document.querySelector('.field-error[data-error-for="join-code"]');
-        if (err) { err.hidden = true; err.textContent = ""; }
+        if (err) {
+          err.hidden = true;
+          err.textContent = "";
+        }
       });
     }
 
@@ -756,7 +718,10 @@
         const wrap = els.joinNickname.parentElement;
         if (wrap) wrap.classList.remove("invalid");
         const err = document.querySelector('.field-error[data-error-for="join-nickname"]');
-        if (err) { err.hidden = true; err.textContent = ""; }
+        if (err) {
+          err.hidden = true;
+          err.textContent = "";
+        }
       });
     }
 
