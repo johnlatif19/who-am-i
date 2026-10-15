@@ -23,12 +23,6 @@ const nicknameSchema = z
   .max(NICKNAME_MAX, "الاسم المستعار طويل جدًا.")
   .regex(/^[\p{L}\p{N}\s_'\-\.]+$/u, "الاسم المستعار يحتوي على رموز غير مسموح بها.");
 
-const teamNameSchema = z
-  .string()
-  .trim()
-  .min(1, "اسم الفريق مطلوب.")
-  .max(40, "اسم الفريق طويل جدًا.");
-
 const loginSchema = z.object({
   username: z
     .string()
@@ -42,13 +36,12 @@ const loginSchema = z.object({
 });
 
 const createSessionSchema = z.object({
-  mode: sessionModeSchema.default("solo"),
+  mode: sessionModeSchema.optional().default("solo"),
 });
 
 const joinSessionSchema = z.object({
   code: sessionCodeSchema,
   nickname: nicknameSchema,
-  team: z.string().trim().max(40, "اسم الفريق طويل جدًا.").optional().default(""),
 });
 
 const answerSchema = z.object({
@@ -114,8 +107,6 @@ const questionSchema = z.object({
     .min(5, "مدة المؤقت قصيرة جدًا.")
     .max(300, "مدة المؤقت طويلة جدًا.")
     .default(30),
-  imageUrl: z.string().trim().url("رابط الصورة غير صالح.").optional().or(z.literal("")),
-  imagePublicId: z.string().trim().max(200).optional().or(z.literal("")),
 });
 
 const questionUpdateSchema = questionSchema.partial().extend({
@@ -123,9 +114,7 @@ const questionUpdateSchema = questionSchema.partial().extend({
 });
 
 const sessionIdSchema = z.string().trim().min(1, "معرّف الجلسة مطلوب.");
-
 const playerIdSchema = z.string().trim().min(1, "معرّف اللاعب مطلوب.");
-
 const questionIdSchema = z.string().trim().min(1, "معرّف السؤال مطلوب.");
 
 function validate(schema, data) {
@@ -226,7 +215,6 @@ module.exports = {
   sessionModeSchema,
   sessionCodeSchema,
   nicknameSchema,
-  teamNameSchema,
   loginSchema,
   createSessionSchema,
   joinSessionSchema,
