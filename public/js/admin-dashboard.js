@@ -25,6 +25,11 @@
     sessionBannerSub: document.getElementById("session-banner-sub"),
     createSessionBtn: document.getElementById("create-session-btn"),
 
+    startBanner: document.getElementById("start-banner"),
+    startBannerTitle: document.getElementById("start-banner-title"),
+    startBannerSub: document.getElementById("start-banner-sub"),
+    startGameBtn: document.getElementById("start-game-btn"),
+
     sessionStatusBadge: document.getElementById("session-status-badge"),
     sessionCode: document.getElementById("session-code"),
     copyCodeBtn: document.getElementById("copy-code-btn"),
@@ -286,6 +291,7 @@
 
     if (!s || !s.id) {
       if (els.sessionBanner) els.sessionBanner.hidden = false;
+      if (els.startBanner) els.startBanner.hidden = true;
       if (els.sessionBannerTitle) els.sessionBannerTitle.textContent = "لا توجد جلسة نشطة";
       if (els.sessionBannerSub) els.sessionBannerSub.textContent = "ابدأ بإنشاء جلسة جديدة لبدء اللعبة.";
       if (els.sessionStatusBadge) {
@@ -307,11 +313,28 @@
     }
 
     if (els.sessionBanner) els.sessionBanner.hidden = true;
+
     if (els.sessionCode) els.sessionCode.textContent = s.code || "------";
     if (els.sessionJoinState) els.sessionJoinState.textContent = s.joinOpen ? "مفتوح" : "مغلق";
     if (els.sessionMode) els.sessionMode.textContent = s.mode === "teams" ? "فرق" : "فردي";
     if (els.sessionPlayersCount) els.sessionPlayersCount.textContent = formatNumber(STATE.players.length);
     if (els.sessionTeamsCount) els.sessionTeamsCount.textContent = formatNumber(STATE.teams.length);
+
+    const hasQuestions = (s.totalQuestions || 0) > 0;
+
+    if (els.startBanner) {
+      if (!hasQuestions && s.status !== "ended") {
+        els.startBanner.hidden = false;
+        if (els.startBannerTitle) els.startBannerTitle.textContent = "الجلسة جاهزة";
+        if (els.startBannerSub) {
+          els.startBannerSub.textContent = STATE.players.length > 0
+            ? "هناك " + formatNumber(STATE.players.length) + " لاعب. اضغط «ابدأ اللعبة» لتحميل الأسئلة."
+            : "اضغط «ابدأ اللعبة» لتحميل الأسئلة وعرض السؤال الأول.";
+        }
+      } else {
+        els.startBanner.hidden = true;
+      }
+    }
 
     if (els.sessionStatusBadge) {
       if (s.status === "ended") {
@@ -701,6 +724,21 @@
     });
   }
 
+  async function startGame() {
+    if (STATE.loading) return;
+    STATE.loading = true;
+    try {
+      await api("/game/questions/load", { method: "POST" });
+      toast("تم تحميل الأسئلة. اللعبة جاهزة للبدء.", "success");
+      pushLog("تم تحميل الأسئلة وبدء السؤال الأول.", "success");
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر تحميل الأسئلة.", "error");
+    } finally {
+      STATE.loading = false;
+    }
+  }
+
   async function openJoin() {
     try {
       await api("/game/session/join/open", { method: "POST" });
@@ -1023,6 +1061,7 @@
 
   function bindEvents() {
     if (els.createSessionBtn) els.createSessionBtn.addEventListener("click", createSession);
+    if (els.startGameBtn) els.startGameBtn.addEventListener("click", startGame);
     if (els.openJoinBtn) els.openJoinBtn.addEventListener("click", openJoin);
     if (els.closeJoinBtn) els.closeJoinBtn.addEventListener("click", closeJoin);
     if (els.endSessionBtn) els.endSessionBtn.addEventListener("click", endSession);
