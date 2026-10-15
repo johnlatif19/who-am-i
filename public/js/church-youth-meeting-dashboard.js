@@ -8,10 +8,10 @@
     question: null,
     timer: null,
     players: [],
-    teams: [],
     leaderboard: [],
     polling: null,
     currentScreen: "waiting",
+    loading: false,
   };
 
   const els = {
@@ -37,8 +37,6 @@
     questionPointsValue: document.getElementById("question-points-value"),
     questionHintBadge: document.getElementById("question-hint-badge"),
     hintBadgeLabel: document.getElementById("hint-badge-label"),
-    questionImageWrap: document.getElementById("question-image-wrap"),
-    questionImage: document.getElementById("question-image"),
     questionDescription: document.getElementById("question-description"),
     hintsList: document.getElementById("hints-list"),
     questionOptions: document.getElementById("question-options"),
@@ -54,6 +52,15 @@
     endWinner: document.getElementById("end-winner"),
     endSub: document.getElementById("end-sub"),
     displayLeaderboardFinal: document.getElementById("display-leaderboard-final"),
+
+    controls: document.getElementById("display-controls"),
+    ctrlStartTimer: document.getElementById("ctrl-start-timer"),
+    ctrlPauseTimer: document.getElementById("ctrl-pause-timer"),
+    ctrlResumeTimer: document.getElementById("ctrl-resume-timer"),
+    ctrlNextHint: document.getElementById("ctrl-next-hint"),
+    ctrlRevealAnswer: document.getElementById("ctrl-reveal-answer"),
+    ctrlCommitRound: document.getElementById("ctrl-commit-round"),
+    ctrlNextQuestion: document.getElementById("ctrl-next-question"),
   };
 
   function setConnectionState(state) {
@@ -98,7 +105,8 @@
       method: opts.method || "GET",
       headers: Object.assign(
         { Accept: "application/json" },
-        opts.body ? { "Content-Type": "application/json" } : {}
+        opts.body ? { "Content-Type": "application/json" } : {},
+        opts.headers || {}
       ),
       credentials: "same-origin",
       body: opts.body ? JSON.stringify(opts.body) : undefined,
@@ -119,6 +127,7 @@
       const message = (data && data.message) || "تعذر تنفيذ العملية.";
       const error = new Error(message);
       error.status = res.status;
+      error.data = data;
       throw error;
     }
     return data;
@@ -149,6 +158,37 @@
       window.location.replace("/admin-login");
       return false;
     }
+  }
+
+  function toast(message, type) {
+    const div = document.createElement("div");
+    div.style.cssText =
+      "position:fixed;bottom:20px;left:20px;z-index:600;padding:12px 16px;border-radius:14px;font-family:inherit;font-size:0.9rem;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.4);transition:opacity .2s;";
+    if (type === "error") {
+      div.style.background = "rgba(239,68,68,0.15)";
+      div.style.border = "1px solid rgba(239,68,68,0.5)";
+      div.style.color = "#fca5a5";
+    } else if (type === "success") {
+      div.style.background = "rgba(16,185,129,0.15)";
+      div.style.border = "1px solid rgba(16,185,129,0.5)";
+      div.style.color = "#6ee7b7";
+    } else if (type === "warning") {
+      div.style.background = "rgba(245,158,11,0.15)";
+      div.style.border = "1px solid rgba(245,158,11,0.5)";
+      div.style.color = "#fcd34d";
+    } else {
+      div.style.background = "rgba(30,36,88,0.9)";
+      div.style.border = "1px solid rgba(255,255,255,0.12)";
+      div.style.color = "#f8fafc";
+    }
+    div.textContent = message;
+    document.body.appendChild(div);
+    setTimeout(function () {
+      div.style.opacity = "0";
+      setTimeout(function () {
+        if (div.parentNode) div.parentNode.removeChild(div);
+      }, 220);
+    }, 2800);
   }
 
   function showScreen(name) {
@@ -252,13 +292,6 @@
       });
     }
 
-    if (q.imageUrl && els.questionImage && els.questionImageWrap) {
-      els.questionImage.src = q.imageUrl;
-      els.questionImageWrap.hidden = false;
-    } else if (els.questionImageWrap) {
-      els.questionImageWrap.hidden = true;
-    }
-
     if (els.questionDescription) {
       els.questionDescription.textContent = q.description || "اختر الإجابة الصحيحة على هاتفك.";
     }
@@ -281,7 +314,19 @@
 
   function renderTimer() {
     const t = STATE.timer;
-    if (!t || !t.total) {
+    const q = STATE.question;
+
+    if (!t && !q) {
+      if (els.timerValue) els.timerValue.textContent = "--";
+      if (els.timerRingFill) {
+        els.timerRingFill.style.strokeDashoffset = "326.7";
+        els.timerRingFill.removeAttribute("data-state");
+      }
+      return;
+    }
+
+    const total = (t && t.total) || (q && q.timeLimit) || 0;
+    if (!total) {
       if (els.timerValue) els.timerValue.textContent = "--";
       if (els.timerRingFill) {
         els.timerRingFill.style.strokeDashoffset = "326.7";
@@ -291,18 +336,20 @@
     }
 
     const now = Date.now();
-    let remaining = 0;
+    let remaining = total;
 
-    if (t.status === "running" && t.endsAt) {
+    if (t && t.status === "running" && t.endsAt) {
       remaining = Math.max(0, Math.ceil((t.endsAt - now) / 1000));
-    } else if (t.status === "paused" && t.remainingMs) {
+    } else if (t && t.status === "paused" && t.remainingMs) {
       remaining = Math.max(0, Math.ceil(t.remainingMs / 1000));
+    } else if (t && t.status === "ended") {
+      remaining = 0;
     }
 
     if (els.timerValue) els.timerValue.textContent = String(remaining);
 
     const circumference = 326.7;
-    const pct = Math.min(1, Math.max(0, remaining / t.total));
+    const pct = Math.min(1, Math.max(0, remaining / total));
     const offset = circumference * (1 - pct);
 
     if (els.timerRingFill) {
@@ -359,6 +406,34 @@
     renderLeaderboard(els.displayLeaderboardFinal, data);
   }
 
+  function renderControls() {
+    if (!els.controls) return;
+    if (!STATE.session || !STATE.session.id) {
+      els.controls.hidden = true;
+      return;
+    }
+    els.controls.hidden = false;
+
+    const q = STATE.question;
+    const status = q ? (q.status || "idle") : null;
+
+    const canStartTimer = status === "idle" || status === "shown";
+    const canPause = status === "running";
+    const canResume = status === "paused";
+    const canNextHint = !!q && (q.revealedHints || []).length < (q.hints || []).length && status !== "revealed" && status !== "committed";
+    const canReveal = !!q && status !== "revealed" && status !== "committed" && status !== "moved";
+    const canCommit = !!q && status === "revealed" && !q.committed;
+    const canNext = !!q && (status === "committed" || status === "revealed");
+
+    if (els.ctrlStartTimer) els.ctrlStartTimer.disabled = !canStartTimer;
+    if (els.ctrlPauseTimer) els.ctrlPauseTimer.disabled = !canPause;
+    if (els.ctrlResumeTimer) els.ctrlResumeTimer.disabled = !canResume;
+    if (els.ctrlNextHint) els.ctrlNextHint.disabled = !canNextHint;
+    if (els.ctrlRevealAnswer) els.ctrlRevealAnswer.disabled = !canReveal;
+    if (els.ctrlCommitRound) els.ctrlCommitRound.disabled = !canCommit;
+    if (els.ctrlNextQuestion) els.ctrlNextQuestion.disabled = !canNext;
+  }
+
   function decideScreen() {
     const s = STATE.session;
     const q = STATE.question;
@@ -366,6 +441,7 @@
     if (!s || !s.id) {
       setStatusPill("waiting", "بانتظار البدء");
       showScreen("waiting");
+      renderControls();
       return;
     }
 
@@ -373,6 +449,7 @@
       setStatusPill("ended", "انتهت اللعبة");
       renderEnd();
       showScreen("end");
+      renderControls();
       return;
     }
 
@@ -380,6 +457,7 @@
       setStatusPill("waiting", "بانتظار البدء");
       renderWaiting();
       showScreen("waiting");
+      renderControls();
       return;
     }
 
@@ -387,6 +465,7 @@
       setStatusPill("revealed", "الإجابة مكشوفة");
       renderReveal();
       showScreen("reveal");
+      renderControls();
       return;
     }
 
@@ -394,6 +473,7 @@
       setStatusPill("active", "الترتيب");
       renderLeaderboard(els.displayLeaderboard, STATE.leaderboard);
       showScreen("leaderboard");
+      renderControls();
       return;
     }
 
@@ -401,6 +481,7 @@
       setStatusPill("waiting", "بانتظار اللاعبين");
       renderWaiting();
       showScreen("waiting");
+      renderControls();
       return;
     }
 
@@ -408,6 +489,7 @@
     renderQuestion();
     renderTimer();
     showScreen("question");
+    renderControls();
   }
 
   async function loadState() {
@@ -417,7 +499,6 @@
       STATE.question = (data && data.question) || null;
       STATE.timer = (data && data.timer) || null;
       STATE.players = (data && data.players) || [];
-      STATE.teams = (data && data.teams) || [];
       STATE.leaderboard = (data && data.leaderboard) || [];
       decideScreen();
     } catch (e) {
@@ -433,10 +514,83 @@
 
   function startTimerTicker() {
     setInterval(function () {
-      if (STATE.timer && STATE.timer.status === "running" && STATE.currentScreen === "question") {
-        renderTimer();
-      }
+      if (STATE.currentScreen === "question") renderTimer();
     }, 500);
+  }
+
+  async function ctrlStartTimer() {
+    try {
+      await api("/game/timer/start", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر بدء المؤقت.", "error");
+    }
+  }
+
+  async function ctrlPauseTimer() {
+    try {
+      await api("/game/timer/pause", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر إيقاف المؤقت.", "error");
+    }
+  }
+
+  async function ctrlResumeTimer() {
+    try {
+      await api("/game/timer/resume", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر استئناف المؤقت.", "error");
+    }
+  }
+
+  async function ctrlNextHint() {
+    try {
+      await api("/game/hint/next", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر إتاحة التلميح.", "error");
+    }
+  }
+
+  async function ctrlRevealAnswer() {
+    if (!window.confirm("هل تريد إظهار الإجابة الصحيحة الآن لجميع اللاعبين؟")) return;
+    try {
+      await api("/game/question/reveal", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر إظهار الإجابة.", "error");
+    }
+  }
+
+  async function ctrlCommitRound() {
+    if (!window.confirm("هل تريد اعتماد نتيجة هذا السؤال وتثبيت النقاط؟")) return;
+    try {
+      await api("/game/question/commit", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر اعتماد النتيجة.", "error");
+    }
+  }
+
+  async function ctrlNextQuestion() {
+    try {
+      await api("/game/question/next", { method: "POST" });
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر الانتقال للسؤال التالي.", "error");
+    }
+  }
+
+  function bindControls() {
+    if (els.ctrlStartTimer) els.ctrlStartTimer.addEventListener("click", ctrlStartTimer);
+    if (els.ctrlPauseTimer) els.ctrlPauseTimer.addEventListener("click", ctrlPauseTimer);
+    if (els.ctrlResumeTimer) els.ctrlResumeTimer.addEventListener("click", ctrlResumeTimer);
+    if (els.ctrlNextHint) els.ctrlNextHint.addEventListener("click", ctrlNextHint);
+    if (els.ctrlRevealAnswer) els.ctrlRevealAnswer.addEventListener("click", ctrlRevealAnswer);
+    if (els.ctrlCommitRound) els.ctrlCommitRound.addEventListener("click", ctrlCommitRound);
+    if (els.ctrlNextQuestion) els.ctrlNextQuestion.addEventListener("click", ctrlNextQuestion);
   }
 
   async function init() {
@@ -444,6 +598,7 @@
     if (!ok) return;
 
     initConnectionWatcher();
+    bindControls();
     await loadState();
     startPolling();
     startTimerTicker();
