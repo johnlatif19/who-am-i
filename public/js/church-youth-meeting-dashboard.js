@@ -316,7 +316,7 @@
     const t = STATE.timer;
     const q = STATE.question;
 
-    if (!t && !q) {
+    if (!q) {
       if (els.timerValue) els.timerValue.textContent = "--";
       if (els.timerRingFill) {
         els.timerRingFill.style.strokeDashoffset = "326.7";
@@ -325,7 +325,7 @@
       return;
     }
 
-    const total = (t && t.total) || (q && q.timeLimit) || 0;
+    const total = (t && t.total) || q.timeLimit || 0;
     if (!total) {
       if (els.timerValue) els.timerValue.textContent = "--";
       if (els.timerRingFill) {
@@ -384,6 +384,7 @@
       const rank = i + 1;
       const rankClass = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "";
       const li = document.createElement("li");
+      if (rank <= 3) li.classList.add("top-three");
       li.innerHTML =
         '<span class="rank ' + rankClass + '">' + rank + "</span>" +
         '<span class="name">' + escapeHtml(entry.name) + "</span>" +
@@ -461,10 +462,18 @@
       return;
     }
 
-    if (q.status === "revealed" || q.status === "committed") {
+    if (q.status === "revealed") {
       setStatusPill("revealed", "الإجابة مكشوفة");
       renderReveal();
       showScreen("reveal");
+      renderControls();
+      return;
+    }
+
+    if (q.status === "committed") {
+      setStatusPill("active", "الترتيب");
+      renderLeaderboard(els.displayLeaderboard, STATE.leaderboard);
+      showScreen("leaderboard");
       renderControls();
       return;
     }
