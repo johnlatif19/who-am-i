@@ -111,23 +111,6 @@
             <p class="field-error" data-error-for="join-nickname" hidden></p>
           </div>
 
-          <div class="field" id="team-field" hidden>
-            <label for="join-team">اختر فريقك</label>
-            <div class="input-wrap">
-              <span class="input-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/>
-                  <circle cx="17" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
-                  <path d="M3 20c1-3 3.5-5 6-5s5 2 6 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-                </svg>
-              </span>
-              <select id="join-team" name="team">
-                <option value="">— اختر —</option>
-              </select>
-            </div>
-            <p class="field-error" data-error-for="join-team" hidden></p>
-          </div>
-
           <div class="join-alert" id="join-alert" role="alert" hidden></div>
 
           <button type="submit" class="btn btn-primary btn-block" id="join-submit">
@@ -156,7 +139,6 @@
 
         <div class="wait-player-info">
           <span class="wait-player-name" id="wait-player-name">—</span>
-          <span class="wait-player-team" id="wait-player-team" hidden></span>
         </div>
 
         <div class="wait-dots">
@@ -189,10 +171,6 @@
         </div>
 
         <ul class="player-hints" id="player-hints"></ul>
-
-        <div class="question-image" id="q-image-wrap" hidden>
-          <img id="q-image" alt="صورة الشخصية" />
-        </div>
       </div>
 
       <div class="options-grid" id="options-grid"></div>
