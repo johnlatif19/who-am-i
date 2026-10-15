@@ -83,6 +83,11 @@ a {
   text-decoration: none;
 }
 
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
 .bg-layer {
   position: fixed;
   inset: 0;
@@ -321,7 +326,7 @@ a {
 .screen {
   width: 100%;
   height: 100%;
-  padding: 40px 32px;
+  padding: 32px 32px 24px;
   display: flex;
   flex-direction: column;
   animation: screenIn 400ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -446,8 +451,8 @@ a {
 }
 
 .screen-question {
-  padding: 24px 32px 32px;
-  gap: 20px;
+  padding: 20px 32px 20px;
+  gap: 16px;
 }
 
 .question-top {
@@ -487,8 +492,8 @@ a {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 28px 32px;
+  gap: 18px;
+  padding: 24px 32px;
   border-radius: var(--radius-xl);
   background: linear-gradient(160deg, var(--surface-1), var(--surface-0));
   border: 1px solid var(--border-1);
@@ -520,22 +525,6 @@ a {
   align-items: flex-start;
   flex: 1;
   min-height: 0;
-}
-
-.question-image {
-  width: 220px;
-  height: 220px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border-1);
-  background: rgba(255, 255, 255, 0.03);
-  flex-shrink: 0;
-}
-
-.question-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .question-text {
@@ -570,12 +559,12 @@ a {
 }
 
 .hints-list li {
-  padding: 12px 18px;
+  padding: 14px 20px;
   border-radius: var(--radius-md);
   background: rgba(212, 175, 55, 0.08);
   border: 1px solid rgba(212, 175, 55, 0.2);
   color: var(--gold-1);
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 500;
   line-height: 1.6;
 }
@@ -588,11 +577,11 @@ a {
 }
 
 .display-option {
-  padding: 16px 22px;
+  padding: 18px 24px;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-1);
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-1);
   text-align: center;
@@ -612,8 +601,8 @@ a {
 
 .timer-ring {
   position: relative;
-  width: 130px;
-  height: 130px;
+  width: 120px;
+  height: 120px;
 }
 
 .timer-ring svg {
@@ -658,7 +647,7 @@ a {
 
 .timer-ring-value {
   font-family: "Cairo", monospace;
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 900;
   color: var(--gold-1);
   line-height: 1;
@@ -666,7 +655,7 @@ a {
 }
 
 .timer-ring-unit {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-2);
 }
 
@@ -786,31 +775,90 @@ a {
   margin: 0;
 }
 
-.display-footer {
+.display-controls {
+  border-top: 1px solid var(--border-0);
+  background: rgba(6, 10, 31, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   padding: 14px 32px;
+  flex-shrink: 0;
+}
+
+.display-controls[hidden] {
+  display: none;
+}
+
+.display-controls-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.ctrl-btn {
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-1);
+  background: var(--surface-1);
+  color: var(--text-0);
+  font-family: inherit;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--trans-med);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ctrl-btn:hover:not(:disabled) {
+  border-color: var(--border-gold);
+  color: var(--gold-1);
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.ctrl-primary {
+  background: linear-gradient(135deg, var(--gold-0), var(--gold-2));
+  color: #1a1400;
+  border-color: transparent;
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.25);
+}
+
+.ctrl-primary:hover:not(:disabled) {
+  color: #1a1400;
+  background: linear-gradient(135deg, var(--gold-1), var(--gold-0));
+  box-shadow: 0 12px 32px rgba(212, 175, 55, 0.4);
+}
+
+.display-footer {
+  padding: 12px 32px;
   border-top: 1px solid var(--border-0);
   text-align: center;
   flex-shrink: 0;
 }
 
 .display-footer-text {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-3);
   letter-spacing: 1px;
 }
 
 @media (max-width: 900px) {
   .screen {
-    padding: 24px 18px;
+    padding: 20px 16px;
   }
 
   .question-content {
     flex-direction: column;
-  }
-
-  .question-image {
-    width: 100%;
-    height: 180px;
   }
 
   .question-options {
@@ -823,6 +871,15 @@ a {
 
   .waiting-code {
     letter-spacing: 0.4rem;
+  }
+
+  .display-controls {
+    padding: 12px 16px;
+  }
+
+  .ctrl-btn {
+    padding: 8px 12px;
+    font-size: 0.82rem;
   }
 }
 
