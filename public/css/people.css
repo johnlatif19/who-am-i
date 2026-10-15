@@ -1,4 +1,6 @@
 :root {
+  color-scheme: dark;
+
   --bg-0: #060a1f;
   --bg-1: #0a0e27;
   --bg-2: #0f1435;
@@ -412,8 +414,7 @@ button {
   height: 20px;
 }
 
-.input-wrap input,
-.input-wrap select {
+.input-wrap input {
   flex: 1;
   background: transparent;
   border: none;
@@ -427,17 +428,6 @@ button {
 
 .input-wrap input::placeholder {
   color: var(--text-3);
-}
-
-.input-wrap select {
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  padding-inline-end: 36px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-  background-repeat: no-repeat;
-  background-position: left 12px center;
-  background-size: 14px;
 }
 
 .input-wrap-code input {
@@ -609,11 +599,6 @@ button {
   color: var(--gold-1);
 }
 
-.wait-player-team {
-  font-size: 0.82rem;
-  color: var(--text-2);
-}
-
 .wait-dots {
   display: flex;
   justify-content: center;
@@ -746,24 +731,6 @@ button {
   font-size: 0.98rem;
   font-weight: 500;
   line-height: 1.6;
-}
-
-.question-image {
-  width: 100%;
-  max-height: 200px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--border-1);
-  background: rgba(255, 255, 255, 0.03);
-  display: grid;
-  place-items: center;
-}
-
-.question-image img {
-  width: 100%;
-  height: 100%;
-  max-height: 200px;
-  object-fit: cover;
 }
 
 .options-grid {
