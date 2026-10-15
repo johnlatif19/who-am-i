@@ -7,8 +7,8 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>لوحة تحكم الأدمن | من أنا؟</title>
 
-  <link rel="icon" type="image/png" href="/assets/images/who-am-i.webp" />
-  <link rel="apple-touch-icon" href="/assets/images/who-am-i.webp" />
+  <link rel="icon" type="image/png" href="/assets/images/who_am_i/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/images/who_am_i/logo.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,7 +36,7 @@
       <a href="/" class="brand" aria-label="الصفحة الرئيسية">
         <span class="brand-logo">
           <img
-            src="/assets/images/who-am-i.webp"
+            src="/assets/images/who_am_i/logo.png"
             alt="شعار من أنا؟"
             onerror="this.style.display='none';this.parentElement.classList.add('brand-logo-empty');"
           />
@@ -85,6 +85,25 @@
           <div class="session-banner-actions">
             <button type="button" class="btn btn-primary btn-sm" id="create-session-btn">
               إنشاء جلسة جديدة
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="session-banner session-banner-start" id="start-banner" hidden>
+        <div class="session-banner-content">
+          <span class="session-banner-icon session-banner-icon-start">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5l12 7-12 7V5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <div class="session-banner-text">
+            <strong id="start-banner-title">الجلسة جاهزة</strong>
+            <span id="start-banner-sub">اضغط «ابدأ اللعبة» لتحميل الأسئلة وعرض السؤال الأول.</span>
+          </div>
+          <div class="session-banner-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="start-game-btn">
+              ابدأ اللعبة
             </button>
           </div>
         </div>
