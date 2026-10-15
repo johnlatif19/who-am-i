@@ -85,7 +85,6 @@ const COLLECTIONS = {
   SESSIONS: "sessions",
   QUESTIONS: "questions",
   PLAYERS: "players",
-  TEAMS: "teams",
   ANSWERS: "answers",
   EVENTS: "events",
   CONFIG: "config",
@@ -93,7 +92,6 @@ const COLLECTIONS = {
 
 const SESSION_SUBCOLLECTIONS = {
   PLAYERS: "players",
-  TEAMS: "teams",
   ANSWERS: "answers",
   EVENTS: "events",
 };
