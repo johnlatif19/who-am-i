@@ -7,8 +7,8 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>شاشة العرض | من أنا؟</title>
 
-  <link rel="icon" type="image/png" href="/assets/images/who_am_i/logo.png" />
-  <link rel="apple-touch-icon" href="/assets/images/who_am_i/logo.png" />
+  <link rel="icon" type="image/png" href="/assets/images/who-am-i.webp" />
+  <link rel="apple-touch-icon" href="/assets/images/who-am-i.webp" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,7 +36,7 @@
       <div class="display-brand">
         <span class="display-logo">
           <img
-            src="/assets/images/who_am_i/logo.png"
+            src="/assets/images/who-am-i.webp"
             alt="شعار من أنا؟"
             onerror="this.style.display='none';this.parentElement.classList.add('display-logo-empty');"
           />
@@ -98,10 +98,6 @@
         </div>
 
         <div class="question-content">
-          <div class="question-image" id="question-image-wrap" hidden>
-            <img id="question-image" alt="صورة الشخصية" />
-          </div>
-
           <div class="question-text">
             <h2 class="question-title">من أنا؟</h2>
             <p class="question-description" id="question-description">
@@ -154,6 +150,32 @@
     </section>
 
   </main>
+
+  <section class="display-controls" id="display-controls" hidden>
+    <div class="display-controls-inner">
+      <button type="button" class="ctrl-btn ctrl-primary" id="ctrl-start-timer">
+        بدء المؤقت
+      </button>
+      <button type="button" class="ctrl-btn" id="ctrl-pause-timer">
+        إيقاف مؤقت
+      </button>
+      <button type="button" class="ctrl-btn" id="ctrl-resume-timer">
+        استئناف
+      </button>
+      <button type="button" class="ctrl-btn" id="ctrl-next-hint">
+        إتاحة التلميح التالي
+      </button>
+      <button type="button" class="ctrl-btn" id="ctrl-reveal-answer">
+        إظهار الإجابة الصحيحة
+      </button>
+      <button type="button" class="ctrl-btn ctrl-primary" id="ctrl-commit-round">
+        اعتماد النتيجة
+      </button>
+      <button type="button" class="ctrl-btn" id="ctrl-next-question">
+        السؤال التالي
+      </button>
+    </div>
+  </section>
 
   <footer class="display-footer">
     <span class="display-footer-text">من أنا؟ | Who am I؟</span>
