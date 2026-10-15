@@ -473,10 +473,14 @@ button {
 }
 
 .btn-spinner {
-  display: inline-grid;
+  display: none;
   place-items: center;
   width: 20px;
   height: 20px;
+}
+
+.btn-spinner:not([hidden]) {
+  display: inline-grid;
 }
 
 .btn-spinner svg {
