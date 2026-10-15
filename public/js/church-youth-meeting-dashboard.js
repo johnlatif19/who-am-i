@@ -10,7 +10,6 @@
     players: [],
     teams: [],
     leaderboard: [],
-    revealed: null,
     polling: null,
     currentScreen: "waiting",
   };
@@ -379,6 +378,7 @@
 
     if (!q) {
       setStatusPill("waiting", "بانتظار البدء");
+      renderWaiting();
       showScreen("waiting");
       return;
     }
