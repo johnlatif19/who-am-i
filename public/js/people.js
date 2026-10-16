@@ -56,6 +56,7 @@
 
     qProgress: document.getElementById("q-progress"),
     qPoints: document.getElementById("q-points"),
+    qQuestionText: document.getElementById("q-question-text"),
     qHintBadge: document.getElementById("q-hint-badge"),
     qHintBadgeLabel: document.getElementById("q-hint-badge-label"),
     playerHints: document.getElementById("player-hints"),
@@ -340,6 +341,9 @@
     }
     if (els.qPoints) {
       els.qPoints.textContent = String(q.currentPoints != null ? q.currentPoints : q.basePoints || 10);
+    }
+    if (els.qQuestionText) {
+      els.qQuestionText.textContent = q.question || "—";
     }
 
     const hints = q.revealedHints || [];
