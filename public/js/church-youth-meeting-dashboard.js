@@ -27,17 +27,13 @@
     screenEnd: document.getElementById("screen-end"),
 
     waitingCode: document.getElementById("waiting-code"),
-    waitingQr: document.getElementById("waiting-qr"),
-    waitingQrImage: document.getElementById("waiting-qr-image"),
-    waitingQrPlaceholder: document.getElementById("waiting-qr-placeholder"),
-    waitingUrl: document.getElementById("waiting-url"),
     waitingPlayersCount: document.getElementById("waiting-players-count"),
 
     questionProgressValue: document.getElementById("question-progress-value"),
     questionPointsValue: document.getElementById("question-points-value"),
     questionHintBadge: document.getElementById("question-hint-badge"),
     hintBadgeLabel: document.getElementById("hint-badge-label"),
-    questionDescription: document.getElementById("question-description"),
+    displayQuestionText: document.getElementById("display-question-text"),
     hintsList: document.getElementById("hints-list"),
     questionOptions: document.getElementById("question-options"),
     timerValue: document.getElementById("timer-value"),
@@ -229,29 +225,6 @@
 
     if (els.waitingCode) els.waitingCode.textContent = s.code || "------";
 
-    if (s.qrDataUrl) {
-      if (els.waitingQrImage) {
-        els.waitingQrImage.src = s.qrDataUrl;
-        els.waitingQrImage.hidden = false;
-      }
-      if (els.waitingQrPlaceholder) els.waitingQrPlaceholder.hidden = true;
-    } else {
-      if (els.waitingQrImage) {
-        els.waitingQrImage.hidden = true;
-        els.waitingQrImage.removeAttribute("src");
-      }
-      if (els.waitingQrPlaceholder) els.waitingQrPlaceholder.hidden = false;
-    }
-
-    if (s.joinUrl) {
-      if (els.waitingUrl) {
-        els.waitingUrl.textContent = s.joinUrl;
-        els.waitingUrl.hidden = false;
-      }
-    } else if (els.waitingUrl) {
-      els.waitingUrl.hidden = true;
-    }
-
     if (els.waitingPlayersCount) {
       els.waitingPlayersCount.textContent = formatNumber(STATE.players.length);
     }
@@ -268,6 +241,10 @@
 
     if (els.questionPointsValue) {
       els.questionPointsValue.textContent = String(q.currentPoints != null ? q.currentPoints : q.basePoints || 10);
+    }
+
+    if (els.displayQuestionText) {
+      els.displayQuestionText.textContent = q.question || "—";
     }
 
     const revealed = q.revealedHints || [];
@@ -290,10 +267,6 @@
         li.textContent = hint;
         els.hintsList.appendChild(li);
       });
-    }
-
-    if (els.questionDescription) {
-      els.questionDescription.textContent = q.description || "اختر الإجابة الصحيحة على هاتفك.";
     }
 
     if (els.questionOptions) {
@@ -470,15 +443,7 @@
       return;
     }
 
-    if (q.status === "committed") {
-      setStatusPill("active", "الترتيب");
-      renderLeaderboard(els.displayLeaderboard, STATE.leaderboard);
-      showScreen("leaderboard");
-      renderControls();
-      return;
-    }
-
-    if (q.status === "moved") {
+    if (q.status === "committed" || q.status === "moved") {
       setStatusPill("active", "الترتيب");
       renderLeaderboard(els.displayLeaderboard, STATE.leaderboard);
       showScreen("leaderboard");
