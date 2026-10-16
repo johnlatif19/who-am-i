@@ -20,6 +20,7 @@ const {
   endSession,
   addPlayer,
   getPlayerByToken,
+  getPlayerById,
   listPlayers,
   kickPlayer,
   leaveSession,
@@ -374,6 +375,20 @@ router.post("/timer/resume", adminAuth, requireActiveSession, requireCurrentQues
 
 router.post("/hint/next", adminAuth, requireActiveSession, requireCurrentQuestion, async function (req, res) {
   try {
+    const playerId =
+      req.body && typeof req.body.playerId === "string" && req.body.playerId.length > 0
+        ? req.body.playerId
+        : null;
+
+    if (playerId) {
+      const player = await getPlayerById(req.session.id, playerId);
+      if (!player) {
+        return res.status(404).json({ success: false, message: "اللاعب غير موجود." });
+      }
+      const result = await revealNextHint(req.session.id, playerId);
+      return res.json({ success: true, hint: result });
+    }
+
     const result = await revealNextHint(req.session.id);
     return res.json({ success: true, hint: result });
   } catch (e) {
