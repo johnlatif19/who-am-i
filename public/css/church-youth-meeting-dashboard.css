@@ -398,36 +398,6 @@ button {
   text-shadow: 0 0 40px rgba(212, 175, 55, 0.5);
 }
 
-.waiting-qr {
-  padding: 14px;
-  background: #fff;
-  border-radius: var(--radius-md);
-  display: grid;
-  place-items: center;
-  min-width: 210px;
-  min-height: 210px;
-}
-
-.waiting-qr img {
-  width: 180px;
-  height: 180px;
-  display: block;
-}
-
-.waiting-qr-placeholder {
-  font-size: 0.9rem;
-  color: #1a1400;
-  text-align: center;
-}
-
-.waiting-url {
-  font-size: 1rem;
-  color: var(--text-2);
-  margin: 0;
-  direction: ltr;
-  font-family: "Cairo", monospace;
-}
-
 .waiting-players {
   display: flex;
   align-items: baseline;
@@ -533,27 +503,26 @@ button {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-.question-title {
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  font-weight: 900;
-  margin: 0;
+.display-question-text {
+  padding: 18px 24px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.14), rgba(124, 58, 237, 0.1));
+  border: 1px solid var(--border-gold);
   color: var(--text-0);
-}
-
-.question-description {
-  font-size: 1.05rem;
-  color: var(--text-1);
-  margin: 0;
-  line-height: 1.7;
+  font-size: clamp(1.2rem, 2.2vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.55;
+  text-align: right;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .hints-list {
   list-style: none;
   padding: 0;
-  margin: 8px 0 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
