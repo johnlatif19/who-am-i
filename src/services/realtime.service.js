@@ -64,7 +64,8 @@ async function buildAdminState() {
         basePoints: question.basePoints,
         currentPoints: question.currentPoints,
         timeLimit: question.timeLimit,
-        revealedHints: question.revealedHints || [],
+        revealedHints: question.globalHints || question.revealedHints || [],
+        globalHints: question.globalHints || [],
         hints: question.hints || [],
         options: question.options || [],
         answersCount: question.answersCount || 0,
@@ -73,6 +74,7 @@ async function buildAdminState() {
         reference: question.reference || "",
         answer: isRevealed(question.status) ? question.answer : null,
         correctAnswer: isRevealed(question.status) ? question.answer : null,
+        personalHintsCount: question.playerHints ? Object.keys(question.playerHints).length : 0,
       }
     : null;
 
@@ -107,7 +109,7 @@ async function buildPlayerState(player, session) {
     return { session: null, question: null, timer: null, me: null, leaderboard: [] };
   }
 
-  const question = await getCurrentQuestion(session.id);
+  const question = await getCurrentQuestion(session.id, player.id);
   const leaderboard = await buildLeaderboard(session.id);
 
   const viewerQuestion = question
@@ -166,10 +168,11 @@ async function buildViewerState() {
         basePoints: question.basePoints,
         currentPoints: question.currentPoints,
         timeLimit: question.timeLimit,
-        revealedHints: question.revealedHints || [],
+        revealedHints: question.globalHints || question.revealedHints || [],
         options: question.options || [],
         reference: isRevealed(question.status) ? question.reference || "" : "",
         correctAnswer: isRevealed(question.status) ? question.answer : null,
+        personalHintsCount: question.playerHints ? Object.keys(question.playerHints).length : 0,
       }
     : null;
 
