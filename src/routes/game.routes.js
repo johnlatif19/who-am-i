@@ -294,7 +294,7 @@ router.post("/answer", validateBody(answerSchema), async function (req, res) {
     }
 
     const { questionId, answer } = req.validatedBody;
-    const question = await getCurrentQuestion(session.id);
+    const question = await getCurrentQuestion(session.id, player.id);
     if (!question || question.id !== questionId) {
       return res.status(400).json({ success: false, message: "السؤال غير مطابق للسؤال الحالي." });
     }
@@ -312,13 +312,18 @@ router.post("/answer", validateBody(answerSchema), async function (req, res) {
       return res.status(409).json({ success: false, message: "لقد أرسلت إجابتك بالفعل على هذا السؤال." });
     }
 
+    const globalHintsSeen = (question.globalHints || []).length;
+    const personalHintsSeen = (question.personalHints || []).length;
+    const hintsSeen = globalHintsSeen + personalHintsSeen;
+
     const correct = isAnswerCorrect(answer, question.answer);
-    await recordAnswer(session.id, questionId, player.id, answer, correct);
+    await recordAnswer(session.id, questionId, player.id, answer, correct, hintsSeen);
 
     return res.json({
       success: true,
       message: "تم إرسال إجابتك.",
       received: true,
+      hintsSeen: hintsSeen,
     });
   } catch (e) {
     return res.status(e.status || 500).json({ success: false, message: e.message || "تعذر إرسال الإجابة." });
