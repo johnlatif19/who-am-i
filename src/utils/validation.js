@@ -66,6 +66,11 @@ const questionHintSchema = z
   .max(300, "التلميح طويل جدًا.");
 
 const questionSchema = z.object({
+  question: z
+    .string()
+    .trim()
+    .min(1, "نص السؤال مطلوب.")
+    .max(300, "نص السؤال طويل جدًا."),
   answer: z
     .string()
     .trim()
