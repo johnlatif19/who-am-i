@@ -429,7 +429,7 @@
     if (els.roundQuestionIndex) {
       els.roundQuestionIndex.textContent = (q.order || 0) + " / " + (s.totalQuestions || STATE.questions.length || 0);
     }
-    if (els.roundHintsCount) els.roundHintsCount.textContent = String((q.revealedHints || []).length);
+    if (els.roundHintsCount) els.roundHintsCount.textContent = String((q.globalHints || q.revealedHints || []).length);
     if (els.roundPointsValue) els.roundPointsValue.textContent = String(q.currentPoints != null ? q.currentPoints : q.basePoints);
     if (els.roundAnswersCount) els.roundAnswersCount.textContent = String(q.answersCount || 0);
 
@@ -456,7 +456,10 @@
       canStartTimer: status === "idle" || status === "shown",
       canPause: status === "running",
       canResume: status === "paused",
-      canNextHint: (q.revealedHints || []).length < (q.hints || []).length && status !== "revealed" && status !== "committed",
+      canNextHint:
+        (q.globalHints || []).length < (q.hints || []).length &&
+        status !== "revealed" &&
+        status !== "committed",
       canReveal: status !== "revealed" && status !== "committed" && status !== "moved",
       canCommit: status === "revealed" && !q.committed,
       canNext: status === "committed" || status === "revealed",
@@ -739,13 +742,85 @@
   }
 
   async function nextHint() {
-    try {
-      await api("/game/hint/next", { method: "POST" });
-      pushLog("تم إتاحة تلميح إضافي.", "info");
-      await loadState();
-    } catch (e) {
-      toast(e.message || "تعذر إتاحة التلميح.", "error");
+    const q = STATE.question;
+    if (!q) return;
+
+    const globalCount = (q.globalHints || q.revealedHints || []).length;
+    const totalHints = (q.hints || []).length;
+    if (globalCount >= totalHints) {
+      toast("تم إتاحة كل التلميحات العامة.", "warning");
+      return;
     }
+
+    const players = STATE.players || [];
+    const optionsHtml =
+      '<p class="confirm-text">كيف تريد إتاحة التلميح التالي؟</p>' +
+      '<div class="form-field">' +
+        '<label>' +
+          '<input type="radio" name="hint-target" value="all" checked /> ' +
+          'للجميع (تلميح عام)' +
+        '</label>' +
+      '</div>' +
+      '<div class="form-field">' +
+        '<label>' +
+          '<input type="radio" name="hint-target" value="player" ' + (players.length === 0 ? "disabled" : "") + ' /> ' +
+          'لشخص معين (تلميح خاص)' +
+        '</label>' +
+      '</div>' +
+      '<div class="form-field">' +
+        '<label for="hint-player-select">اختر اللاعب</label>' +
+        '<select id="hint-player-select" disabled>' +
+          players.map(function (p) {
+            return '<option value="' + p.id + '">' + escapeHtml(p.nickname) + "</option>";
+          }).join("") +
+        "</select>" +
+      "</div>";
+
+    openModal(
+      "إتاحة التلميح التالي",
+      optionsHtml,
+      [
+        { label: "إلغاء", className: "btn-outline", onClick: closeModal },
+        {
+          label: "إتاحة التلميح",
+          className: "btn-primary",
+          onClick: async function () {
+            const target = document.querySelector('input[name="hint-target"]:checked');
+            const select = document.getElementById("hint-player-select");
+            const mode = target ? target.value : "all";
+            const playerId = mode === "player" && select ? select.value : null;
+
+            closeModal();
+
+            try {
+              if (playerId) {
+                await api("/game/hint/next", {
+                  method: "POST",
+                  body: { playerId: playerId },
+                });
+                pushLog("تم إتاحة تلميح خاص للاعب.", "info");
+              } else {
+                await api("/game/hint/next", { method: "POST" });
+                pushLog("تم إتاحة تلميح عام.", "info");
+              }
+              await loadState();
+            } catch (e) {
+              toast(e.message || "تعذر إتاحة التلميح.", "error");
+            }
+          },
+        },
+      ]
+    );
+
+    setTimeout(function () {
+      const radios = document.querySelectorAll('input[name="hint-target"]');
+      const select = document.getElementById("hint-player-select");
+      radios.forEach(function (r) {
+        r.addEventListener("change", function () {
+          if (select) select.disabled = r.value !== "player" || !r.checked;
+        });
+      });
+    }, 0);
   }
 
   async function revealAnswer() {
