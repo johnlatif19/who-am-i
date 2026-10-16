@@ -429,9 +429,15 @@
     if (els.roundQuestionIndex) {
       els.roundQuestionIndex.textContent = (q.order || 0) + " / " + (s.totalQuestions || STATE.questions.length || 0);
     }
-    if (els.roundHintsCount) els.roundHintsCount.textContent = String((q.globalHints || q.revealedHints || []).length);
-    if (els.roundPointsValue) els.roundPointsValue.textContent = String(q.currentPoints != null ? q.currentPoints : q.basePoints);
-    if (els.roundAnswersCount) els.roundAnswersCount.textContent = String(q.answersCount || 0);
+    if (els.roundHintsCount) {
+      els.roundHintsCount.textContent = String((q.globalHints || q.revealedHints || []).length);
+    }
+    if (els.roundPointsValue) {
+      els.roundPointsValue.textContent = String(q.currentPoints != null ? q.currentPoints : q.basePoints);
+    }
+    if (els.roundAnswersCount) {
+      els.roundAnswersCount.textContent = String(q.answersCount || 0);
+    }
 
     const status = q.status || "idle";
     const labels = {
@@ -492,7 +498,23 @@
       return;
     }
 
+    const q = STATE.question;
+    const globalCount = (q && (q.globalHints || q.revealedHints || []).length) || 0;
+    const totalHints = (q && (q.hints || []).length) || 0;
+    const canGivePersonalHint =
+      !!q &&
+      q.status !== "revealed" &&
+      q.status !== "committed" &&
+      q.status !== "moved" &&
+      globalCount < totalHints;
+
     STATE.players.forEach(function (player) {
+      const personalCount = (q && q.playerHints && q.playerHints[player.id])
+        ? q.playerHints[player.id].length
+        : 0;
+      const playerSeenTotal = globalCount + personalCount;
+      const playerHintDisabled = !canGivePersonalHint || playerSeenTotal >= totalHints;
+
       const div = document.createElement("div");
       div.className = "list-item";
       div.innerHTML =
@@ -503,10 +525,25 @@
           "</span>" +
         "</div>" +
         '<div class="list-item-actions">' +
+          '<button type="button" class="icon-btn icon-btn-hint" data-action="hint" data-id="' + escapeHtml(player.id) + '" title="إتاحة تلميح خاص لهذا اللاعب"' +
+            (playerHintDisabled ? " disabled" : "") +
+          ">" +
+            '<svg viewBox="0 0 24 24">' +
+              '<path d="M9 18h6M10 21h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+              '<path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>' +
+            "</svg>" +
+          "</button>" +
           '<button type="button" class="icon-btn" data-action="kick" data-id="' + escapeHtml(player.id) + '" title="استبعاد">' +
             '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
           "</button>" +
         "</div>";
+
+      const hintBtn = div.querySelector('[data-action="hint"]');
+      if (hintBtn && !playerHintDisabled) {
+        hintBtn.addEventListener("click", function () {
+          givePersonalHint(player.id, player.nickname);
+        });
+      }
 
       div.querySelector('[data-action="kick"]').addEventListener("click", function () {
         confirmModal(
@@ -752,75 +789,27 @@
       return;
     }
 
-    const players = STATE.players || [];
-    const optionsHtml =
-      '<p class="confirm-text">كيف تريد إتاحة التلميح التالي؟</p>' +
-      '<div class="form-field">' +
-        '<label>' +
-          '<input type="radio" name="hint-target" value="all" checked /> ' +
-          'للجميع (تلميح عام)' +
-        '</label>' +
-      '</div>' +
-      '<div class="form-field">' +
-        '<label>' +
-          '<input type="radio" name="hint-target" value="player" ' + (players.length === 0 ? "disabled" : "") + ' /> ' +
-          'لشخص معين (تلميح خاص)' +
-        '</label>' +
-      '</div>' +
-      '<div class="form-field">' +
-        '<label for="hint-player-select">اختر اللاعب</label>' +
-        '<select id="hint-player-select" disabled>' +
-          players.map(function (p) {
-            return '<option value="' + p.id + '">' + escapeHtml(p.nickname) + "</option>";
-          }).join("") +
-        "</select>" +
-      "</div>";
+    try {
+      await api("/game/hint/next", { method: "POST" });
+      pushLog("تم إتاحة تلميح عام.", "info");
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر إتاحة التلميح.", "error");
+    }
+  }
 
-    openModal(
-      "إتاحة التلميح التالي",
-      optionsHtml,
-      [
-        { label: "إلغاء", className: "btn-outline", onClick: closeModal },
-        {
-          label: "إتاحة التلميح",
-          className: "btn-primary",
-          onClick: async function () {
-            const target = document.querySelector('input[name="hint-target"]:checked');
-            const select = document.getElementById("hint-player-select");
-            const mode = target ? target.value : "all";
-            const playerId = mode === "player" && select ? select.value : null;
-
-            closeModal();
-
-            try {
-              if (playerId) {
-                await api("/game/hint/next", {
-                  method: "POST",
-                  body: { playerId: playerId },
-                });
-                pushLog("تم إتاحة تلميح خاص للاعب.", "info");
-              } else {
-                await api("/game/hint/next", { method: "POST" });
-                pushLog("تم إتاحة تلميح عام.", "info");
-              }
-              await loadState();
-            } catch (e) {
-              toast(e.message || "تعذر إتاحة التلميح.", "error");
-            }
-          },
-        },
-      ]
-    );
-
-    setTimeout(function () {
-      const radios = document.querySelectorAll('input[name="hint-target"]');
-      const select = document.getElementById("hint-player-select");
-      radios.forEach(function (r) {
-        r.addEventListener("change", function () {
-          if (select) select.disabled = r.value !== "player" || !r.checked;
-        });
+  async function givePersonalHint(playerId, playerName) {
+    try {
+      await api("/game/hint/next", {
+        method: "POST",
+        body: { playerId: playerId },
       });
-    }, 0);
+      toast("تم إتاحة تلميح خاص للاعب " + playerName + ".", "success");
+      pushLog("تم إتاحة تلميح خاص للاعب: " + playerName, "info");
+      await loadState();
+    } catch (e) {
+      toast(e.message || "تعذر إتاحة التلميح الخاص.", "error");
+    }
   }
 
   async function revealAnswer() {
