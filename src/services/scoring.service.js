@@ -15,7 +15,7 @@ function computeQuestionValue(basePoints, hintsRevealedCount) {
   const base = typeof basePoints === "number" ? basePoints : 10;
   const hints = typeof hintsRevealedCount === "number" ? hintsRevealedCount : 0;
   const value = base - hints * HINT_PENALTY;
-  return Math.max(MIN_POINTS, value);
+  return value;
 }
 
 function isAnswerCorrect(givenAnswer, correctAnswer) {
@@ -35,8 +35,9 @@ async function hasAlreadyAnswered(sessionId, questionId, playerId) {
   return !snap.empty;
 }
 
-async function recordAnswer(sessionId, questionId, playerId, answer, isCorrect) {
+async function recordAnswer(sessionId, questionId, playerId, answer, isCorrect, hintsSeen) {
   const ts = now();
+  const hints = Number(hintsSeen) || 0;
   const ref = await db()
     .collection(COLLECTIONS.SESSIONS)
     .doc(sessionId)
@@ -46,6 +47,7 @@ async function recordAnswer(sessionId, questionId, playerId, answer, isCorrect) 
       playerId: playerId,
       answer: answer,
       isCorrect: !!isCorrect,
+      hintsSeen: hints,
       at: ts,
     });
   return Object.assign({ id: ref.id }, {
@@ -53,6 +55,7 @@ async function recordAnswer(sessionId, questionId, playerId, answer, isCorrect) 
     playerId: playerId,
     answer: answer,
     isCorrect: !!isCorrect,
+    hintsSeen: hints,
     at: ts,
   });
 }
@@ -70,7 +73,8 @@ async function getAnswersForQuestion(sessionId, questionId) {
 }
 
 async function incrementPlayerScore(sessionId, playerId, points) {
-  if (!points || points <= 0) return;
+  const value = Number(points) || 0;
+  if (value === 0) return;
   const ref = db()
     .collection(COLLECTIONS.SESSIONS)
     .doc(sessionId)
@@ -79,7 +83,7 @@ async function incrementPlayerScore(sessionId, playerId, points) {
   const doc = await ref.get();
   if (!doc.exists) return;
   const current = Number(doc.data().score) || 0;
-  await ref.set({ score: current + points }, { merge: true });
+  await ref.set({ score: current + value }, { merge: true });
 }
 
 async function commitRound(sessionId, question) {
@@ -91,7 +95,7 @@ async function commitRound(sessionId, question) {
   }
 
   const answers = await getAnswersForQuestion(sessionId, question.id);
-  const points = computeQuestionValue(question.basePoints, (question.revealedHints || []).length);
+  const base = typeof question.basePoints === "number" ? question.basePoints : 10;
 
   let committedCount = 0;
   let correctCount = 0;
@@ -101,12 +105,21 @@ async function commitRound(sessionId, question) {
     if (!a.isCorrect) continue;
     if (awarded.has(a.playerId)) continue;
     awarded.add(a.playerId);
+
+    const hintsSeen = Number(a.hintsSeen) || 0;
+    const points = base - hintsSeen * HINT_PENALTY;
+
     await incrementPlayerScore(sessionId, a.playerId, points);
+
     committedCount++;
     correctCount++;
   }
 
-  return { alreadyCommitted: false, committedCount: committedCount, correctCount: correctCount, points: points };
+  return {
+    alreadyCommitted: false,
+    committedCount: committedCount,
+    correctCount: correctCount,
+  };
 }
 
 async function getSessionFromFirestore(sessionId) {
