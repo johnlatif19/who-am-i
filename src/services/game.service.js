@@ -356,6 +356,7 @@ async function attachQuestionsToSession(sessionId, questions) {
       currentPoints: q.basePoints || DEFAULT_BASE_POINTS,
       timeLimit: q.timeLimit || DEFAULT_TIME_LIMIT,
       revealedHints: [],
+      playerHints: {},
       committed: false,
       answersCount: 0,
       correctCount: 0,
@@ -446,6 +447,7 @@ async function setCurrentQuestion(sessionId, order) {
   item.endsAt = null;
   item.remainingMs = null;
   item.revealedHints = [];
+  item.playerHints = {};
   item.committed = false;
   item.currentPoints = item.basePoints;
   item.answersCount = 0;
@@ -472,7 +474,7 @@ async function setCurrentQuestion(sessionId, order) {
   return item;
 }
 
-async function getCurrentQuestion(sessionId) {
+async function getCurrentQuestion(sessionId, playerId) {
   const s = await getSessionById(sessionId);
   if (!s) return null;
   const list = s.questions || [];
@@ -481,13 +483,22 @@ async function getCurrentQuestion(sessionId) {
   const item = list[idx];
   const q = await getQuestionById(item.questionId);
   if (!q) return null;
+
+  const globalHints = item.revealedHints || [];
+  const playerHintsMap = item.playerHints || {};
+  const personalHints = playerId && playerHintsMap[playerId] ? playerHintsMap[playerId] : [];
+  const mergedHints = globalHints.concat(personalHints);
+
   return Object.assign({}, q, {
     order: item.order,
     status: item.status,
     basePoints: item.basePoints,
     currentPoints: item.currentPoints,
     timeLimit: item.timeLimit,
-    revealedHints: item.revealedHints || [],
+    revealedHints: mergedHints,
+    globalHints: globalHints,
+    personalHints: personalHints,
+    playerHints: playerHintsMap,
     committed: item.committed,
     answersCount: item.answersCount,
     correctCount: item.correctCount,
@@ -593,28 +604,52 @@ async function resumeTimer(sessionId) {
   return true;
 }
 
-async function revealNextHint(sessionId) {
+async function revealNextHint(sessionId, playerId) {
   const q = await getCurrentQuestion(sessionId);
   if (!q) throw Object.assign(new Error("لا يوجد سؤال حالي."), { status: 400 });
+
   if (q.status === QUESTION_STATUS.REVEALED || q.status === QUESTION_STATUS.COMMITTED) {
     throw Object.assign(new Error("لا يمكن إتاحة تلميح بعد كشف الإجابة."), { status: 400 });
   }
+
   const hints = q.hints || [];
-  const revealed = q.revealedHints || [];
-  if (revealed.length >= hints.length) {
+  const globalHints = q.globalHints || [];
+  const personalHints = q.personalHints || [];
+
+  if (playerId) {
+    const seenForPlayer = globalHints.length + personalHints.length;
+    if (seenForPlayer >= hints.length) {
+      throw Object.assign(new Error("تم إتاحة كل التلميحات لهذا اللاعب."), { status: 400 });
+    }
+    const nextHint = hints[seenForPlayer];
+
+    await updateQuestionInSession(sessionId, function (item) {
+      const map = item.playerHints || {};
+      const arr = map[playerId] ? map[playerId].slice() : [];
+      arr.push(nextHint);
+      map[playerId] = arr;
+      item.playerHints = map;
+      return item;
+    });
+
+    await logEvent(sessionId, "hint_revealed_personal", "تم إتاحة تلميح خاص للاعب");
+    return { personal: true, playerId: playerId, hint: nextHint };
+  }
+
+  if (globalHints.length >= hints.length) {
     throw Object.assign(new Error("تم إتاحة كل التلميحات."), { status: 400 });
   }
-  const nextHint = hints[revealed.length];
-  const updatedRevealed = revealed.concat([nextHint]);
+  const nextHint = hints[globalHints.length];
+  const updatedGlobal = globalHints.concat([nextHint]);
 
   await updateQuestionInSession(sessionId, function (item) {
-    item.revealedHints = updatedRevealed;
-    item.currentPoints = Math.max(0, item.basePoints - HINT_PENALTY * updatedRevealed.length);
+    item.revealedHints = updatedGlobal;
+    item.currentPoints = Math.max(0, item.basePoints - HINT_PENALTY * updatedGlobal.length);
     return item;
   });
 
-  await logEvent(sessionId, "hint_revealed", "تم إتاحة تلميح رقم " + updatedRevealed.length);
-  return { revealedHints: updatedRevealed, currentPoints: Math.max(0, q.basePoints - HINT_PENALTY * updatedRevealed.length) };
+  await logEvent(sessionId, "hint_revealed", "تم إتاحة تلميح رقم " + updatedGlobal.length);
+  return { personal: false, hint: nextHint };
 }
 
 async function revealAnswer(sessionId) {
