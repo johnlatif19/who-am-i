@@ -562,6 +562,7 @@
       item.innerHTML =
         '<div class="question-item-main">' +
           '<span class="question-item-title">' + escapeHtml(q.answer) + "</span>" +
+          '<span class="question-item-question">' + escapeHtml(q.question || "—") + "</span>" +
           '<span class="question-item-meta">' +
             "<span>المرجع: " + escapeHtml(q.reference || "—") + "</span>" +
             "<span>النقاط: " + formatNumber(q.basePoints || 10) + "</span>" +
@@ -803,6 +804,7 @@
   function openQuestionForm(question) {
     const isEdit = !!question;
     const q = question || {
+      question: "",
       answer: "",
       reference: "",
       options: ["", "", "", ""],
@@ -832,6 +834,13 @@
 
     openModal(
       isEdit ? "تعديل سؤال" : "إضافة سؤال",
+      '<div class="form-field">' +
+        '<label for="q-question">نص السؤال</label>' +
+        '<textarea id="q-question" rows="2" placeholder="مثال: من هو النبي الذي...">' +
+          escapeHtml(q.question || "") +
+        "</textarea>" +
+        '<span class="hint">اكتب صيغة السؤال التي ستظهر للاعبين.</span>' +
+      "</div>" +
       '<div class="form-field">' +
         '<label for="q-answer">اسم الشخصية (الإجابة الصحيحة)</label>' +
         '<input id="q-answer" type="text" value="' + escapeHtml(q.answer) + '" />' +
@@ -878,6 +887,7 @@
   }
 
   function collectQuestionForm(id) {
+    const questionText = (document.getElementById("q-question") || {}).value || "";
     const answer = (document.getElementById("q-answer") || {}).value || "";
     const reference = (document.getElementById("q-reference") || {}).value || "";
     const basePoints = Number((document.getElementById("q-points") || {}).value) || 10;
@@ -893,6 +903,11 @@
       const el = document.getElementById("q-hint-" + i);
       return el ? el.value.trim() : "";
     }).filter(function (h) { return h.length > 0; });
+
+    if (!questionText.trim()) {
+      toast("يرجى إدخال نص السؤال.", "error");
+      return null;
+    }
 
     if (!answer.trim()) {
       toast("يرجى إدخال اسم الشخصية.", "error");
@@ -910,6 +925,7 @@
     }
 
     const payload = {
+      question: questionText.trim(),
       answer: answer.trim(),
       reference: reference.trim(),
       options: options,
