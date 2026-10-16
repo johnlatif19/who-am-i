@@ -395,6 +395,7 @@ async function listAllQuestions() {
 async function createQuestion(data) {
   const ts = now();
   const doc = {
+    question: data.question,
     answer: data.answer,
     reference: data.reference || "",
     description: data.description || "",
