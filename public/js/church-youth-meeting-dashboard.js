@@ -57,6 +57,8 @@
     ctrlRevealAnswer: document.getElementById("ctrl-reveal-answer"),
     ctrlCommitRound: document.getElementById("ctrl-commit-round"),
     ctrlNextQuestion: document.getElementById("ctrl-next-question"),
+
+    modalOverlay: null,
   };
 
   function setConnectionState(state) {
@@ -185,6 +187,87 @@
         if (div.parentNode) div.parentNode.removeChild(div);
       }, 220);
     }, 2800);
+  }
+
+  function openHintModal() {
+    const q = STATE.question;
+    if (!q) return;
+
+    const players = STATE.players || [];
+
+    const overlay = document.createElement("div");
+    overlay.className = "display-modal-overlay";
+
+    const optionsHtml =
+      '<p class="display-modal-text">كيف تريد إتاحة التلميح التالي؟</p>' +
+      '<div class="display-modal-field">' +
+        '<label>' +
+          '<input type="radio" name="hint-target" value="all" checked /> ' +
+          'للجميع (تلميح عام)' +
+        '</label>' +
+      '</div>' +
+      '<div class="display-modal-field">' +
+        '<label>' +
+          '<input type="radio" name="hint-target" value="player" ' + (players.length === 0 ? "disabled" : "") + ' /> ' +
+          'لشخص معين (تلميح خاص)' +
+        '</label>' +
+      '</div>' +
+      '<div class="display-modal-field">' +
+        '<label>اختر اللاعب</label>' +
+        '<select class="display-modal-select" id="hint-player-select" disabled>' +
+          players.map(function (p) {
+            return '<option value="' + p.id + '">' + escapeHtml(p.nickname) + "</option>";
+          }).join("") +
+        "</select>" +
+      "</div>";
+
+    overlay.innerHTML =
+      '<div class="display-modal" role="dialog" aria-modal="true">' +
+        '<h3 class="display-modal-title">إتاحة التلميح التالي</h3>' +
+        '<div class="display-modal-body">' + optionsHtml + '</div>' +
+        '<div class="display-modal-actions">' +
+          '<button type="button" class="display-modal-btn display-modal-btn-ghost" data-role="cancel">إلغاء</button>' +
+          '<button type="button" class="display-modal-btn display-modal-btn-primary" data-role="confirm">إتاحة التلميح</button>' +
+        "</div>" +
+      "</div>";
+
+    document.body.appendChild(overlay);
+
+    function close() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+
+    overlay.querySelector('[data-role="cancel"]').addEventListener("click", close);
+
+    const select = overlay.querySelector("#hint-player-select");
+    const radios = overlay.querySelectorAll('input[name="hint-target"]');
+    radios.forEach(function (r) {
+      r.addEventListener("change", function () {
+        if (select) select.disabled = r.value !== "player" || !r.checked;
+      });
+    });
+
+    overlay.querySelector('[data-role="confirm"]').addEventListener("click", async function () {
+      const target = overlay.querySelector('input[name="hint-target"]:checked');
+      const mode = target ? target.value : "all";
+      const playerId = mode === "player" && select ? select.value : null;
+
+      close();
+
+      try {
+        if (playerId) {
+          await api("/game/hint/next", {
+            method: "POST",
+            body: { playerId: playerId },
+          });
+        } else {
+          await api("/game/hint/next", { method: "POST" });
+        }
+        await loadState();
+      } catch (e) {
+        toast(e.message || "تعذر إتاحة التلميح.", "error");
+      }
+    });
   }
 
   function showScreen(name) {
@@ -519,15 +602,6 @@
     }
   }
 
-  async function ctrlNextHint() {
-    try {
-      await api("/game/hint/next", { method: "POST" });
-      await loadState();
-    } catch (e) {
-      toast(e.message || "تعذر إتاحة التلميح.", "error");
-    }
-  }
-
   async function ctrlRevealAnswer() {
     if (!window.confirm("هل تريد إظهار الإجابة الصحيحة الآن لجميع اللاعبين؟")) return;
     try {
@@ -561,7 +635,7 @@
     if (els.ctrlStartTimer) els.ctrlStartTimer.addEventListener("click", ctrlStartTimer);
     if (els.ctrlPauseTimer) els.ctrlPauseTimer.addEventListener("click", ctrlPauseTimer);
     if (els.ctrlResumeTimer) els.ctrlResumeTimer.addEventListener("click", ctrlResumeTimer);
-    if (els.ctrlNextHint) els.ctrlNextHint.addEventListener("click", ctrlNextHint);
+    if (els.ctrlNextHint) els.ctrlNextHint.addEventListener("click", openHintModal);
     if (els.ctrlRevealAnswer) els.ctrlRevealAnswer.addEventListener("click", ctrlRevealAnswer);
     if (els.ctrlCommitRound) els.ctrlCommitRound.addEventListener("click", ctrlCommitRound);
     if (els.ctrlNextQuestion) els.ctrlNextQuestion.addEventListener("click", ctrlNextQuestion);
